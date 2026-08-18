@@ -259,6 +259,7 @@
   <string name="tool_name_todo_write">Задачи</string>
   <string name="tool_name_file_share">Поделиться файлом</string>
   <string name="tool_name_show_file">Показать файл</string>
+  <string name="tool_name_render_html_card">HTML-карточка</string>
   <string name="tool_name_use_skill">Использовать навык</string>
   <string name="tool_name_cv_image">Компьютерное зрение</string>
   <string name="tool_name_edit_image">Редактировать изображение</string>

@@ -341,6 +341,23 @@ private fun exportToMarkdown(
                         appendLine()
                     }
 
+                    is UIMessagePart.HtmlCard -> {
+                        append(if (part.title.isNotBlank()) "**${part.title}**" else "**HTML Card**")
+                        appendLine()
+                        if (part.url.isNotBlank()) {
+                            append("[URL](${part.url})")
+                            appendLine()
+                        }
+                        if (part.html.isNotBlank()) {
+                            append("```html")
+                            appendLine()
+                            append(part.html)
+                            appendLine()
+                            append("```")
+                            appendLine()
+                        }
+                    }
+
                     else -> {}
                 }
             }

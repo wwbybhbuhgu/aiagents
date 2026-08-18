@@ -406,13 +406,12 @@ class GenerationHandler(
 
                 // 内部协议: AI 在 Markdown 中用 content://(Android 原生文件协议) 引用工作区文件
                 appendLine()
-                appendLine("You can display files (images/videos/audio) inline in your markdown output using Android's native content:// file protocol:")
-                appendLine("- To show a workspace file, first call the `show_file` tool with its container path. It returns a `content://` uri (e.g. `content://<app>.workspacefile/<workspaceId>/workspace/images/xxx.png`) whose path part is the full container absolute path.")
-                appendLine("- Embed the uri directly in markdown image syntax WITHOUT angle brackets: `![description](<uri>)` where `<uri>` is just the content:// string pasted as-is (do NOT wrap it in `<` and `>`).")
-                appendLine("- Correct: `![pic](content://com.aiagents.debug.workspacefile/workspaceid/workspace/images/x.png)`  ·  Wrong: `![pic](<content://...>)` (angle brackets break rendering).")
-                appendLine("- The app resolves `content://` natively (via a custom ContentProvider) to serve the file from the workspace rootfs; no other protocol is supported for inline files.")
-                appendLine("- Workspace tools return container absolute paths (e.g. `/workspace/images/xxx.png`). To inline such a file, pass that path to `show_file` to obtain its content:// uri, then embed the uri.")
-                appendLine("- This displays the file inline with no conversion step; the app resolves it directly.")
+                appendLine("Inline file display via content:// (markdown):")
+                appendLine("- LIMITATION: markdown can ONLY render IMAGES inline. It CANNOT play audio, play video, or display a text/document file. Do not try to embed audio/video/text files with the content:// protocol in markdown — they will not render.")
+                appendLine("- `content://` in markdown is ONLY for images (e.g. `![pic](content://<app>.workspacefile/<workspaceId>/workspace/images/xxx.png)`). Paste the uri WITHOUT angle brackets (`![pic](content://...)`, not `![pic](<content://...>)`).")
+                appendLine("- To obtain an inline image uri: call `show_file` with the file's container path; it returns a `content://` uri you can embed.")
+                appendLine("- DO NOT paste a plain text/document/audio/video file's content or its path directly into markdown. Text documents and all non-image media are shown through the `show_file` tool (or `render_html_card`), which renders them with the proper built-in viewer/player.")
+                appendLine("- In short: markdown inline = images only. Everything else (audio, video, pdf, text/markdown documents, zip, etc.) → use the `show_file` tool so it renders as a proper media/document card. That is exactly the value of `show_file`.")
 
                 // 内容边界声明: 明确没有应用层的前置审核/限制, 由模型自身与后端承担判断
                 appendLine()

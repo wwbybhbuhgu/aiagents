@@ -49,10 +49,15 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.BubbleChatQuestion
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Tick01
+import me.rerere.hugeicons.stroke.Video01
+import me.rerere.hugeicons.stroke.MusicNote01
 import com.aiagents.R
 import com.aiagents.ui.components.message.tools.ToolUIContext
 import com.aiagents.ui.components.message.tools.ToolUIRegistry
 import com.aiagents.ui.components.richtext.ZoomableAsyncImage
+import com.aiagents.ui.components.richtext.HtmlCardView
+import com.aiagents.ui.components.richtext.MediaPlayerCard
+import com.aiagents.ai.provider.Model
 import com.aiagents.ui.components.ui.ChainOfThoughtScope
 import com.aiagents.ui.components.ui.DotLoading
 import com.aiagents.ui.modifier.shimmer
@@ -64,6 +69,7 @@ private const val ASK_USER_TOOL_NAME = "ask_user"
 fun ChainOfThoughtScope.ChatMessageToolStep(
     tool: UIMessagePart.Tool,
     loading: Boolean = false,
+    model: Model? = null,
     onToolApproval: ((toolCallId: String, approved: Boolean, reason: String) -> Unit)? = null,
     onToolAnswer: ((toolCallId: String, answer: String) -> Unit)? = null,
     overlaySafe: Boolean = false,
@@ -98,9 +104,13 @@ fun ChainOfThoughtScope.ChatMessageToolStep(
     val isPending = tool.approvalState is ToolApprovalState.Pending
     val isDenied = tool.approvalState is ToolApprovalState.Denied
     val images = tool.output.filterIsInstance<UIMessagePart.Image>()
+    val videos = tool.output.filterIsInstance<UIMessagePart.Video>()
+    val audios = tool.output.filterIsInstance<UIMessagePart.Audio>()
+    val htmlCards = tool.output.filterIsInstance<UIMessagePart.HtmlCard>()
+    val mediaParts = images + videos + audios
 
-    // 摘要由注册的渲染器决定; 图片输出与拒绝原因为所有工具通用
-    val hasExtraContent = renderer.hasSummary(context) || isDenied || images.isNotEmpty()
+    // 摘要由注册的渲染器决定; 媒体输出与拒绝原因为所有工具通用
+    val hasExtraContent = renderer.hasSummary(context) || isDenied || mediaParts.isNotEmpty() || htmlCards.isNotEmpty()
 
     ControlledChainOfThoughtStep(
         expanded = expanded,
@@ -159,7 +169,7 @@ fun ChainOfThoughtScope.ChatMessageToolStep(
         } else {
             null
         },
-        onClick = if (!overlaySafe && (context.content != null || isPending || images.isNotEmpty())) {
+        onClick = if (!overlaySafe && (context.content != null || isPending || mediaParts.isNotEmpty())) {
             { showResult = true }
         } else {
             null
@@ -178,12 +188,34 @@ fun ChainOfThoughtScope.ChatMessageToolStep(
                                     model = image.url,
                                     contentDescription = null,
                                     modifier = Modifier
-                                        .height(64.dp)
+                                        .height(120.dp)
                                         .wrapContentWidth(),
                                     enablePreview = !overlaySafe,
                                 )
                             }
                         }
+                    }
+                    // 视频/音频: 内置播放器(WebView HTML5 media)
+                    videos.forEach { video ->
+                        MediaPlayerCard(
+                            url = video.url,
+                            mimeType = "video/*",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    audios.forEach { audio ->
+                        MediaPlayerCard(
+                            url = audio.url,
+                            mimeType = "audio/*",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    htmlCards.forEach { card ->
+                        HtmlCardView(
+                            part = card,
+                            model = model,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                     if (isDenied) {
                         val reason = (tool.approvalState as ToolApprovalState.Denied).reason
@@ -490,3 +522,4 @@ private fun ToolDenyReasonDialog(
         }
     )
 }
+

@@ -514,6 +514,18 @@ sealed class UIMessagePart {
             )
         }
     }
+
+    /** 交互式 HTML 卡片: 由 AI 生成 HTML(或外部 URL), 在 WebView 中渲染, 并通过 JS Bridge 暴露工作区/模型 API */
+    @Serializable
+    @SerialName("html_card")
+    data class HtmlCard(
+        val url: String = "",
+        val html: String = "",
+        val title: String = "",
+        val height: Int = 480,
+        val allowFullscreen: Boolean = true,
+        override var metadata: JsonObject? = null,
+    ) : UIMessagePart()
 }
 
 /**
@@ -549,6 +561,7 @@ fun List<UIMessagePart>.toSortedMessageParts(): List<UIMessagePart> {
             is UIMessagePart.Video -> 1
             is UIMessagePart.Audio -> 1
             is UIMessagePart.Document -> 1
+            is UIMessagePart.HtmlCard -> 1
         }
     }
 }

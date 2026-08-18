@@ -32,11 +32,16 @@ fun buildShowFileTool(
 ): Tool = Tool(
     name = "show_file",
     description = """
-        Displays a file from the workspace directly in the conversation.
-        Pass the absolute path inside the workspace rootfs (e.g. /workspace/images/xxx.png, /workspace/media/video.mp4).
-        Images render inline, audio/video render as playable media, other files render as a document card.
-        Use this when the user wants to SEE or PREVIEW a generated/workspace file (images, videos, audio, PDFs, documents).
-        The returned URI can be embedded in your markdown reply with ![](<uri>) to show it inline.
+        Displays a file from the workspace directly in the conversation with a built-in viewer/player.
+        Pass the absolute path inside the workspace rootfs (e.g. /workspace/images/xxx.png, /workspace/media/video.mp4, /workspace/docs/notes.md).
+        Images render inline as a picture; videos and audio render with a BUILT-IN player (no external app needed); documents (text/markdown/pdf/zip etc.) render as a document card.
+
+        IMPORTANT — this is the ONLY way to display non-image files:
+        - Markdown can ONLY render images inline. It CANNOT play audio/video and CANNOT show text/document files.
+        - So for any audio, video, pdf, text/markdown document, or other file: call `show_file` (do NOT paste the file's contents or path into your markdown reply — it will not render).
+        - For images you may either call `show_file` (inline card) or embed the returned content:// uri in markdown as `![desc](<uri>)`.
+
+        Use this whenever the user wants to SEE or PREVIEW a generated/workspace file of ANY type.
     """.trimIndent(),
     parameters = {
         InputSchema.Obj(
@@ -66,10 +71,11 @@ fun buildShowFileTool(
         val contentUri = "content://${context.packageName}.workspacefile/$workspaceId$path"
 
         val part = when {
-            // 图片/视频/音频: Coil 通过自定义 ContentProvider 加载 content://
+            // 图片: Coil 通过自定义 ContentProvider 加载 content://(同进程可读)
             extension in IMAGE_EXTENSIONS -> UIMessagePart.Image(url = contentUri)
-            extension in VIDEO_EXTENSIONS -> UIMessagePart.Video(url = contentUri)
-            extension in AUDIO_EXTENSIONS -> UIMessagePart.Audio(url = contentUri)
+            // 视频/音频: 用宿主机 file:// 路径, 渲染端通过 FileProvider 暴露给外部播放器
+            extension in VIDEO_EXTENSIONS -> UIMessagePart.Video(url = hostFile.toUri().toString())
+            extension in AUDIO_EXTENSIONS -> UIMessagePart.Audio(url = hostFile.toUri().toString())
             // 文档: 渲染端通过 part.url.toUri().toFile() 生成分享/打开 FileProvider URI,
             // 需要 file:// 形式才能正确解析回真实文件
             else -> UIMessagePart.Document(

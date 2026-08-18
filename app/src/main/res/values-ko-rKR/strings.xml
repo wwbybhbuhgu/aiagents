@@ -259,6 +259,7 @@
   <string name="tool_name_todo_write">작업</string>
   <string name="tool_name_file_share">파일 공유</string>
   <string name="tool_name_show_file">파일 표시</string>
+  <string name="tool_name_render_html_card">HTML 카드</string>
   <string name="tool_name_use_skill">스킬 사용</string>
   <string name="tool_name_cv_image">컴퓨터 비전</string>
   <string name="tool_name_edit_image">이미지 편집</string>

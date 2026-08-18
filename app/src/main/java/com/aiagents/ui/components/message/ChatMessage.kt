@@ -86,6 +86,8 @@ import com.aiagents.data.model.replaceRegexes
 import com.aiagents.ui.components.richtext.MarkdownBlock
 import com.aiagents.ui.components.richtext.ZoomableAsyncImage
 import com.aiagents.ui.components.richtext.buildMarkdownPreviewHtml
+import com.aiagents.ui.components.richtext.HtmlCardView
+import com.aiagents.ui.components.richtext.MediaPlayerCard
 import com.aiagents.ui.components.webview.WebViewContentCache
 import com.aiagents.ui.components.ui.ChainOfThought
 import com.aiagents.ui.components.ui.Favicon
@@ -344,6 +346,7 @@ private fun MessagePartsBlock(
                                     ChatMessageToolStep(
                                         tool = step.tool,
                                         loading = loading && !step.tool.isExecuted,
+                                        model = model,
                                         onToolApproval = onToolApproval,
                                         onToolAnswer = onToolAnswer,
                                     )
@@ -431,60 +434,23 @@ private fun MessagePartsBlock(
                     }
 
                     is UIMessagePart.Video -> {
-                        Surface(
-                            tonalElevation = 2.dp,
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW)
-                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                intent.data = FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.fileprovider",
-                                    part.url.toUri().toFile()
-                                )
-                                val chooserIndent = Intent.createChooser(intent, null)
-                                context.startActivity(chooserIndent)
-                            },
-                            modifier = Modifier,
-                            shape = RoundedCornerShape(8.dp),
-                        ) {
-                            Box(modifier = Modifier.size(72.dp), contentAlignment = Alignment.Center) {
-                                Icon(HugeIcons.Video01, null)
-                            }
-                        }
+                        MediaPlayerCard(
+                            url = part.url,
+                            mimeType = "video/*",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                        )
                     }
 
                     is UIMessagePart.Audio -> {
-                        Surface(
-                            tonalElevation = 2.dp,
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW)
-                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                intent.data = FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.fileprovider",
-                                    part.url.toUri().toFile()
-                                )
-                                val chooserIndent = Intent.createChooser(intent, null)
-                                context.startActivity(chooserIndent)
-                            },
-                            modifier = Modifier,
-                            shape = RoundedCornerShape(50),
-                            color = MaterialTheme.colorScheme.secondaryContainer
-                        ) {
-                            ProvideTextStyle(MaterialTheme.typography.labelSmall) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = HugeIcons.MusicNote03,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
+                        MediaPlayerCard(
+                            url = part.url,
+                            mimeType = "audio/*",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                        )
                     }
 
                     is UIMessagePart.Image -> {
@@ -507,6 +473,14 @@ private fun MessagePartsBlock(
                                     .height(72.dp)
                             )
                         }
+                    }
+
+                    is UIMessagePart.HtmlCard -> {
+                        HtmlCardView(
+                            part = part,
+                            model = model,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
 
                     is UIMessagePart.Document -> {

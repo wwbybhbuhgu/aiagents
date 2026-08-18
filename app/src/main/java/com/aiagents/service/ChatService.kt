@@ -66,6 +66,7 @@ import com.aiagents.data.ai.tools.buildAssistantTools
 import com.aiagents.data.ai.tools.buildCronTools
 import com.aiagents.data.ai.tools.buildFileShareTool
 import com.aiagents.data.ai.tools.buildShowFileTool
+import com.aiagents.data.ai.tools.buildHtmlCardTool
 import com.aiagents.data.ai.tools.buildImageGenTool
 import com.aiagents.data.ai.tools.buildCvImageTool
 import com.aiagents.data.ai.tools.buildImageEditTool
@@ -831,6 +832,11 @@ class ChatService(
             buildShowFileTool(
                 context = context,
                 workspaceRepository = workspaceRepository,
+                workspaceId = assistant.workspaceId?.toString(),
+            )
+        )
+        add(
+            buildHtmlCardTool(
                 workspaceId = assistant.workspaceId?.toString(),
             )
         )
