@@ -69,7 +69,7 @@ fun createSearchTools(
                     - Embed 2 to 4 images, and only use urls from `images[]` (never fabricate or alter urls).
                     - Usually place the images at the very beginning of your reply; skip them entirely if none are relevant.
                     - Each image is downloaded and saved to the workspace; the `downloaded_images[]` array maps original urls to two fields per image:
-                      - `uri`: an app content URI for inline display — embed it directly as `![](<uri>)`.
+                      - `uri`: an app content URI for inline display — embed it directly as `![](<uri>)` (paste the content:// string as-is, do NOT wrap it in `<` and `>`).
                       - `path`: the container absolute path (e.g. `/workspace/images/search_img_xxx.jpg`) — use this with `image_analysis` or an OCR tool to actually read the image content.
 
                     Example:
