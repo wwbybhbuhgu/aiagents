@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
@@ -127,7 +126,6 @@ private fun ReasoningContent(
     expandState: ReasoningCardState,
     scrollState: ScrollState,
     fadeHeight: Float,
-    loading: Boolean,
 ) {
     val isPreview = expandState == ReasoningCardState.Preview
     val reasoningTextStyle = MaterialTheme.typography.bodySmall.copy(
@@ -178,15 +176,9 @@ private fun ReasoningContent(
                 modifier = Modifier.fillMaxSize(),
             )
         }
-        // 流式生成期间不启用 SelectionContainer，避免 selectable 列表并发修改导致的
-        // ConcurrentModificationException（详见 ChatMessage.kt 文本块同样处理）。
-        if (loading) {
-            reasoningContent()
-        } else {
-            SelectionContainer {
-                reasoningContent()
-            }
-        }
+        // 不用 SelectionContainer 包裹: 思维链内容可能含 Markdown 内嵌图片(content://),
+        // SelectionContainer 会干扰内嵌 Image 的渲染(流式期间正常、结束后透明)。
+        reasoningContent()
     }
 }
 
@@ -248,7 +240,6 @@ fun ChainOfThoughtScope.ChatMessageReasoningStep(
                 expandState = state.expandState,
                 scrollState = state.scrollState,
                 fadeHeight = fadeHeight,
-                loading = loading,
             )
         },
     )
