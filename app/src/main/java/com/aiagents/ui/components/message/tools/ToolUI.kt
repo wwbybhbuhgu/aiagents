@@ -40,6 +40,7 @@ import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.hugeicons.stroke.Earth
 import me.rerere.hugeicons.stroke.Edit01
 import me.rerere.hugeicons.stroke.Eye
+import me.rerere.hugeicons.stroke.Share01
 import me.rerere.hugeicons.stroke.FileView
 import me.rerere.hugeicons.stroke.Flashlight
 import me.rerere.hugeicons.stroke.GlobalSearch
@@ -120,6 +121,7 @@ internal fun toolDisplayName(toolName: String): String? = when (toolName) {
     "edit_assistant" -> stringResource(R.string.tool_name_edit_assistant)
     "todo_write" -> stringResource(R.string.tool_name_todo_write)
     "file_share" -> stringResource(R.string.tool_name_file_share)
+    "show_file" -> stringResource(R.string.tool_name_show_file)
     "use_skill" -> stringResource(R.string.tool_name_use_skill)
     "recent_chats" -> stringResource(R.string.tool_name_recent_chats)
     "conversation_search" -> stringResource(R.string.tool_name_conversation_search)
@@ -209,6 +211,8 @@ internal fun toolDisplayName(toolName: String): String? = when (toolName) {
  * 已注册专用渲染器的工具会自行覆盖 [ToolUIRenderer.icon]。
  */
 internal fun toolIcon(toolName: String): ImageVector = when (toolName) {
+    "file_share" -> HugeIcons.Share01
+    "show_file" -> HugeIcons.Eye
     "create_assistant" -> HugeIcons.UserAdd01
     "edit_assistant" -> HugeIcons.UserEdit01
     "import_to_workspace" -> HugeIcons.Upload01

@@ -260,6 +260,7 @@
   <string name="tool_name_edit_assistant">编辑助手</string>
   <string name="tool_name_todo_write">任务</string>
   <string name="tool_name_file_share">分享文件</string>
+  <string name="tool_name_show_file">展示文件</string>
   <string name="tool_name_use_skill">使用技能</string>
   <string name="tool_name_cv_image">计算机视觉</string>
   <string name="tool_name_edit_image">编辑图片</string>

@@ -1,6 +1,7 @@
 package com.aiagents.data.ai.tools
 
 import android.content.Context
+import androidx.core.content.FileProvider
 import java.io.File
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
@@ -20,16 +21,20 @@ import com.aiagents.ai.core.Tool
 import com.aiagents.ai.ui.UIMessagePart
 import com.aiagents.data.datastore.Settings
 import com.aiagents.data.files.FileFolders
+import com.aiagents.data.repository.WorkspaceRepository
 import com.aiagents.utils.JsonInstantPretty
 import com.aiagents.utils.toLocalString
 import com.aiagents.search.SearchService
 import com.aiagents.search.SearchServiceOptions
+import com.aiagents.workspace.WorkspaceStorageArea
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
 fun createSearchTools(
     context: Context,
     settings: Settings,
+    workspaceId: String? = null,
+    workspaceRepository: WorkspaceRepository? = null,
     compress: suspend (toolParams: JsonObject, content: String) -> String = { _, content -> content },
 ): Set<Tool> {
     // 用户已配置的搜索引擎列表: AI 只能从中选择
@@ -59,11 +64,12 @@ fun createSearchTools(
                     - If no results are cited, omit citations.
 
                     Images:
-                    - When images help the user understand the answer, embed relevant ones using Markdown: `![](url)`.
+                    - When images help the user understand the answer, embed relevant ones using Markdown: `![](<uri>)`.
                     - Embed 2 to 4 images, and only use urls from `images[]` (never fabricate or alter urls).
                     - Usually place the images at the very beginning of your reply; skip them entirely if none are relevant.
-                    - Each image is also downloaded and saved locally; the `downloaded_images[]` array maps original urls to local paths like `/tool_outputs/search_img_xxx.jpg`.
-                    - Use `image_analysis` or an OCR tool on a local path (e.g. `/tool_outputs/search_img_xxx.jpg`) when you need to actually read the image content.
+                    - Each image is downloaded and saved to the workspace; the `downloaded_images[]` array maps original urls to two fields per image:
+                      - `uri`: an app content URI for inline display — embed it directly as `![](<uri>)`.
+                      - `path`: the container absolute path (e.g. `/workspace/images/search_img_xxx.jpg`) — use this with `image_analysis` or an OCR tool to actually read the image content.
 
                     Example:
                     The capital of France is Paris. [citation,example.com](abc123)
@@ -116,7 +122,9 @@ fun createSearchTools(
                                 })
                             val imageUrls = (map["images"] as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
                             if (imageUrls.isNotEmpty()) {
-                                map["downloaded_images"] = JsonArray(downloadSearchImages(context, imageUrls))
+                                map["downloaded_images"] = JsonArray(
+                                    downloadSearchImages(context, workspaceId, workspaceRepository, imageUrls)
+                                )
                             }
                             JsonObject(map)
                         }
@@ -178,37 +186,77 @@ private fun resolveSearchOptions(settings: Settings, params: JsonObject): Search
 private const val SEARCH_IMAGE_MAX_BYTES = 20 * 1024 * 1024
 private const val SEARCH_IMAGE_MAX_COUNT = 20
 
-/** 下载搜索到的网络图片到工具输出目录(filesDir/tool_outputs), 返回 [{url, path, size}] 列表 */
-private fun downloadSearchImages(context: Context, imageUrls: List<String>): List<JsonObject> {
+/** 下载搜索到的网络图片到工作区 /workspace/images (持久, 启动清理不删除), 返回 [{url, path, size}] 列表 */
+private suspend fun downloadSearchImages(
+    context: Context,
+    workspaceId: String?,
+    workspaceRepository: WorkspaceRepository?,
+    imageUrls: List<String>,
+): List<JsonObject> {
     val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .followRedirects(true)
         .build()
-    val dir = File(context.filesDir, FileFolders.TOOL_OUTPUTS).apply { mkdirs() }
+    val fallbackDir = File(context.filesDir, FileFolders.TOOL_OUTPUTS).apply { mkdirs() }
     val timestamp = System.currentTimeMillis()
     val results = mutableListOf<JsonObject>()
     imageUrls.take(SEARCH_IMAGE_MAX_COUNT).forEachIndexed { index, url ->
         if (!url.startsWith("http://") && !url.startsWith("https://")) return@forEachIndexed
         val fileName = "search_img_${timestamp}_${index + 1}.jpg"
-        val target = File(dir, fileName)
-        runCatching {
+        val bytes = runCatching {
             val request = Request.Builder()
                 .url(url)
                 .header("User-Agent", "AIAgents/2.4.5 (Android)")
                 .get()
                 .build()
             client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@use
-                val bytes = response.body?.bytes() ?: return@use
-                if (bytes.isEmpty() || bytes.size > SEARCH_IMAGE_MAX_BYTES) return@use
-                target.writeBytes(bytes)
-                results += buildJsonObject {
-                    put("url", url)
-                    put("path", "/tool_outputs/$fileName")
-                    put("size", bytes.size)
-                }
+                if (!response.isSuccessful) return@use null
+                val body = response.body?.bytes() ?: return@use null
+                if (body.isEmpty() || body.size > SEARCH_IMAGE_MAX_BYTES) return@use null
+                body
             }
+        }.getOrNull() ?: return@forEachIndexed
+        val (uri, rootfsPath) = runCatching {
+            if (!workspaceId.isNullOrBlank() && workspaceRepository != null) {
+                val entry = workspaceRepository.importFile(
+                    id = workspaceId,
+                    area = WorkspaceStorageArea.FILES,
+                    destinationPath = "/workspace/images",
+                    fileName = fileName,
+                    inputStream = bytes.inputStream(),
+                )
+                val rootfs = "/workspace/images/${entry.name}"
+                val hostFile = workspaceRepository.resolveRootfsHostFile(workspaceId, rootfs)
+                val contentUri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    hostFile,
+                ).toString()
+                contentUri to rootfs
+            } else {
+                val target = File(fallbackDir, fileName)
+                target.writeBytes(bytes)
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    target,
+                ).toString() to "/tool_outputs/$fileName"
+            }
+        }.getOrElse { error ->
+            val target = File(fallbackDir, fileName)
+            target.writeBytes(bytes)
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                target,
+            ).toString() to "/tool_outputs/$fileName"
+        }
+        results += buildJsonObject {
+            put("url", url)
+            put("uri", uri)
+            put("path", rootfsPath)
+            put("size", bytes.size)
         }
     }
     return results

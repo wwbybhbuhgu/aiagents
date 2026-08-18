@@ -351,6 +351,13 @@
         android:name="android.support.FILE_PROVIDER_PATHS"
         android:resource="@xml/file_paths" />
     </provider>
+
+    <!-- 工作区文件 Provider: content://<auth>/<workspaceId>/<容器绝对路径>, 供 Markdown 内联展示 -->
+    <provider
+      android:name=".data.provider.WorkspaceFileProvider"
+      android:authorities="${applicationId}.workspacefile"
+      android:exported="false"
+      android:grantUriPermissions="true" />
   </application>
 
 </manifest>

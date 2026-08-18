@@ -65,6 +65,7 @@ import com.aiagents.data.ai.tools.buildAgentTools
 import com.aiagents.data.ai.tools.buildAssistantTools
 import com.aiagents.data.ai.tools.buildCronTools
 import com.aiagents.data.ai.tools.buildFileShareTool
+import com.aiagents.data.ai.tools.buildShowFileTool
 import com.aiagents.data.ai.tools.buildImageGenTool
 import com.aiagents.data.ai.tools.buildCvImageTool
 import com.aiagents.data.ai.tools.buildImageEditTool
@@ -744,7 +745,14 @@ class ChatService(
         includeDelegation: Boolean = true,
     ): List<Tool> = buildList {
         if (assistant.enableWebSearch) {
-            addAll(createSearchTools(context, settings) { params, content -> compressPageContent(params, content) })
+            addAll(
+                createSearchTools(
+                    context = context,
+                    settings = settings,
+                    workspaceId = assistant.workspaceId?.toString(),
+                    workspaceRepository = workspaceRepository,
+                ) { params, content -> compressPageContent(params, content) }
+            )
         }
         // 内置工具全部启用，不提供关闭选项（Agent 模式）；
         // 手机自动化工具需显式开启 enablePhoneAutomation，否则不注入，避免 AI 自发操作屏幕
@@ -815,6 +823,13 @@ class ChatService(
         addAll(buildAssistantTools(settingsStore, currentAssistantId = assistant.id))
         add(
             buildFileShareTool(
+                workspaceRepository = workspaceRepository,
+                workspaceId = assistant.workspaceId?.toString(),
+            )
+        )
+        add(
+            buildShowFileTool(
+                context = context,
                 workspaceRepository = workspaceRepository,
                 workspaceId = assistant.workspaceId?.toString(),
             )

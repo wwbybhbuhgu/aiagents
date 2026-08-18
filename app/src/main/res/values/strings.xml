@@ -261,6 +261,7 @@
   <string name="tool_name_edit_assistant">Edit assistant</string>
   <string name="tool_name_todo_write">Tasks</string>
   <string name="tool_name_file_share">Share file</string>
+  <string name="tool_name_show_file">Show file</string>
   <string name="tool_name_use_skill">Use skill</string>
   <string name="tool_name_cv_image">Computer vision</string>
   <string name="tool_name_edit_image">Edit image</string>

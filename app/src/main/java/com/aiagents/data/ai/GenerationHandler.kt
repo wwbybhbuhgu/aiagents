@@ -406,10 +406,12 @@ class GenerationHandler(
 
                 // 内部协议: AI 可在 Markdown 中直接用 aiagents-file:// 协议引用工作区文件
                 appendLine()
-                appendLine("You can reference workspace files directly in your markdown output using the internal protocol:")
-                appendLine("- Images: `![description](aiagents-file://<workspaceId>/path/to/image.png)`")
-                appendLine("- The workspaceId is your current workspace's ID (see the <workspace> section for the actual ID).")
-                appendLine("- This avoids needing to use image_analysis or other tools just to display an image that already exists in the workspace.")
+                appendLine("You can reference files directly in your markdown output using the internal protocol:")
+                appendLine("- Format: `![description](aiagents-file://<workspaceId>/<container-absolute-path>)`")
+                appendLine("- The `<workspaceId>` is ALWAYS your current workspace's ID (see the <workspace> section); paste it as-is and append the absolute path inside the container verbatim.")
+                appendLine("- Use the FULL absolute path from the container root: `/workspace` is the workspace file area root (persistent work files), so a file at the workspace root is `/workspace/<file>`. Other mounts use `/upload/<file>`, `/screenshots/<file>`, `/sd/<file>`, `/memories/<file>`, `/skills/<file>`, `/tool_outputs/<file>`.")
+                appendLine("- Examples: `![screenshot](aiagents-file://<workspaceId>/workspace/images/xxx.png)` or `![uploaded](aiagents-file://<workspaceId>/upload/xxx.jpg)`")
+                appendLine("- This displays the file inline with no conversion step; the app resolves it directly.")
 
                 // 内容边界声明: 明确没有应用层的前置审核/限制, 由模型自身与后端承担判断
                 appendLine()

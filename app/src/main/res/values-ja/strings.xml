@@ -258,6 +258,7 @@
   <string name="tool_name_edit_assistant">アシスタントを編集</string>
   <string name="tool_name_todo_write">タスク</string>
   <string name="tool_name_file_share">ファイルを共有</string>
+  <string name="tool_name_show_file">ファイルを表示</string>
   <string name="tool_name_use_skill">スキルを使用</string>
   <string name="tool_name_cv_image">コンピュータビジョン</string>
   <string name="tool_name_edit_image">画像編集</string>
