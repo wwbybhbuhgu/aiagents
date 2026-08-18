@@ -70,6 +70,7 @@ import com.aiagents.ai.core.MessageRole
 import com.aiagents.ai.ui.UIMessagePart
 import com.aiagents.data.automation.FloatingWindowController
 import com.aiagents.data.datastore.getCurrentAssistant
+import com.aiagents.data.datastore.getSelectedASRProvider
 import com.aiagents.data.event.AppEvent
 import com.aiagents.data.event.AppEventBus
 import com.aiagents.data.repository.ConversationRepository
@@ -92,6 +93,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.aiagents.asr.ASRState
 import com.aiagents.asr.ASRStatus
+import com.aiagents.asr.ASRProviderSetting
 import com.aiagents.asr.providers.SherpaNcnnASRController
 import kotlinx.coroutines.isActive
 import me.rerere.hugeicons.HugeIcons
@@ -641,7 +643,8 @@ LaunchedEffect(Unit) {
                     )
                 }
 
-                // ASR mic button
+                // ASR mic button (跟随主界面 ASR 配置显示)
+                if (LocalSettings.current.isAsrConfigured()) {
                 IconButton(
                         onClick = {
                             android.util.Log.d("OverlayFl", "mic tap: micRecording=$micRecording")
@@ -672,6 +675,7 @@ Icon(
                         tint = if (micRecording) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurface,
                     )
+                }
                 }
             }
         }
@@ -987,3 +991,16 @@ private fun OverlayMessageContent(
         }
     }
     }
+
+/** 跟随主界面: 已配置可用的 ASR provider 时才显示悬浮窗录音按钮 */
+private fun com.aiagents.data.datastore.Settings.isAsrConfigured(): Boolean {
+    val provider = getSelectedASRProvider() ?: return false
+    return when (provider) {
+        is ASRProviderSetting.LocalStreamingSTT -> true
+        is ASRProviderSetting.OpenAIRealtime -> provider.apiKey.isNotBlank()
+        is ASRProviderSetting.DashScope -> provider.apiKey.isNotBlank()
+        is ASRProviderSetting.Volcengine -> provider.apiKey.isNotBlank()
+        is ASRProviderSetting.MiMo -> provider.apiKey.isNotBlank()
+        is ASRProviderSetting.Step -> provider.apiKey.isNotBlank()
+    }
+}

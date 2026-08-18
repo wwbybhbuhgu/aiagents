@@ -294,44 +294,43 @@ class FilesManager(
     }
 
     @OptIn(ExperimentalEncodingApi::class)
-    suspend fun saveMessageImage(activityContext: Context, image: String) = withContext(Dispatchers.IO) {
-        val activity = requireNotNull(activityContext.getActivity()) { "Activity not found" }
-        when {
-            image.startsWith("data:image") -> {
-                val byteArray = Base64.decode(image.substringAfter("base64,").toByteArray())
-                val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
-                activityContext.exportImage(activity, bitmap)
-            }
+    suspend fun saveMessageImage(activityContext: Context, image: String): Boolean =
+        withContext(Dispatchers.IO) {
+            val activity = requireNotNull(activityContext.getActivity()) { "Activity not found" }
+            when {
+                image.startsWith("data:image") -> {
+                    val byteArray = Base64.decode(image.substringAfter("base64,").toByteArray())
+                    val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+                        ?: error("图片解码失败")
+                    check(activityContext.exportImage(activity, bitmap)) { "保存图片失败" }
+                }
 
-            image.startsWith("file:") -> {
-                val file = image.toUri().toFile()
-                activityContext.exportImageFile(activity, file)
-            }
+                image.startsWith("file:") -> {
+                    val file = image.toUri().toFile()
+                    if (!file.exists()) error("图片文件不存在: ${file.absolutePath}")
+                    check(activityContext.exportImageFile(activity, file)) { "保存图片失败" }
+                }
 
-            image.startsWith("/") -> {
-                activityContext.exportImageFile(activity, File(image))
-            }
+                image.startsWith("/") -> {
+                    val file = File(image)
+                    if (!file.exists()) error("图片文件不存在: $image")
+                    check(activityContext.exportImageFile(activity, file)) { "保存图片失败" }
+                }
 
-            image.startsWith("http") -> {
-                runCatching {
+                image.startsWith("http") -> {
                     val url = URL(image)
                     val connection = url.openConnection() as HttpURLConnection
                     connection.connect()
-
                     if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                         val bitmap = BitmapFactory.decodeStream(connection.inputStream)
-                        activityContext.exportImage(activity, bitmap)
+                            ?: error("图片解码失败: $image")
+                        check(activityContext.exportImage(activity, bitmap)) { "保存图片失败" }
                     } else {
-                        Log.e(
-                            TAG,
-                            "saveMessageImage: Failed to download image from $image, response code: ${connection.responseCode}"
-                        )
+                        error("下载图片失败, HTTP ${connection.responseCode}: $image")
                     }
-                }.getOrNull()
-            }
+                }
 
-            image.startsWith("aiagents-file://") -> {
-                runCatching {
+                image.startsWith("aiagents-file://") -> {
                     val (workspaceId, path) = com.aiagents.ui.media.AiAgentsFileScheme.parse(image)
                         ?: error("Invalid aiagents-file uri: $image")
                     val workspaceRepository: com.aiagents.data.repository.WorkspaceRepository = getKoin().get()
@@ -340,27 +339,22 @@ class FilesManager(
                         workspaceRepository.exportRootfsFile(workspaceId, path, out)
                     }.toByteArray()
                     val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    if (bitmap != null) {
-                        activityContext.exportImage(activity, bitmap)
-                    }
-                }.getOrNull()
-            }
+                        ?: error("工作区图片解码失败: $path")
+                    check(activityContext.exportImage(activity, bitmap)) { "保存图片失败" }
+                }
 
-            image.startsWith("content://") -> {
-                runCatching {
+                image.startsWith("content://") -> {
                     val uri = Uri.parse(image)
                     val bitmap = activityContext.contentResolver.openInputStream(uri)?.use { stream ->
                         BitmapFactory.decodeStream(stream)
-                    }
-                    if (bitmap != null) {
-                        activityContext.exportImage(activity, bitmap)
-                    }
-                }.getOrNull()
-            }
+                    } ?: error("无法读取图片: $image")
+                    check(activityContext.exportImage(activity, bitmap)) { "保存图片失败" }
+                }
 
-            else -> error("Invalid image format")
+                else -> error("Invalid image format")
+            }
+            true
         }
-    }
 
     suspend fun syncFolder(folder: String = FileFolders.UPLOAD): SyncResult = withContext(Dispatchers.IO) {
         val dir = File(context.filesDir, folder)

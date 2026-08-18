@@ -73,7 +73,6 @@ import com.aiagents.data.ai.tools.buildImageAnalysisTool
 import com.aiagents.data.ai.tools.local.LocalToolOption
 import org.koin.java.KoinJavaComponent.getKoin
 import com.aiagents.data.files.SkillManager
-import com.aiagents.data.ai.transformers.AiAgentsFileToContentUriTransformer
 import com.aiagents.data.ai.transformers.Base64ImageToLocalFileTransformer
 import com.aiagents.data.ai.transformers.UploadFileTransformer
 import com.aiagents.data.ai.transformers.PlaceholderTransformer
@@ -155,6 +154,9 @@ private val outputTransformers by lazy {
     )
 }
 
+/** 生成中消息落盘节流间隔(ms) */
+private const val PERSIST_INTERVAL_MS = 400L
+
 class ChatService(
     private val context: Application,
     private val appScope: AppScope,
@@ -179,8 +181,6 @@ class ChatService(
     private val toolScenarioGuideTransformer = ToolScenarioGuideTransformer()
     // 用户最高优先级注入 (用户设置"最重要的事情", 注入主 Agent 与子 Agent 的系统提示)
     private val userPriorityTransformer = UserPriorityTransformer()
-    // aiagents-file:// → content:// 转换器 (依赖 context + workspaceRepository)
-    private val aiAgentsFileTransformer = AiAgentsFileToContentUriTransformer(context, workspaceRepository)
 
     // 常驻容器服务启动标志（首次有就绪工作区时启动一次）
     private var containerServiceStarted = false
@@ -188,6 +188,9 @@ class ChatService(
     // 统一会话管理
     private val sessions = ConcurrentHashMap<Uuid, ConversationSession>()
     private val _sessionsVersion = MutableStateFlow(0L)
+
+    // 生成中消息落盘节流
+    private var lastPersistAt = 0L
 
     // 错误状态
     private val _errors = MutableStateFlow<List<ChatError>>(emptyList())
@@ -621,10 +624,11 @@ class ChatService(
                     add(workspaceReminderTransformer)
                     add(userPriorityTransformer)
                 },
-                outputTransformers = outputTransformers + aiAgentsFileTransformer,
+                outputTransformers = outputTransformers,
                 tools = tools,
             ).onCompletion {
-                // 可能被取消了，或者意外结束，兜底更新
+                // 可能被取消了，或者意外结束，兜底更新并落盘，
+                // 避免停止生成/进程被杀时进行中的消息(含工具调用、图片)只停留在内存态丢失
                 val updatedConversation = getConversationFlow(conversationId).value.copy(
                     messageNodes = getConversationFlow(conversationId).value.messageNodes.map { node ->
                         node.copy(messages = node.messages.map { it.finishReasoning() })
@@ -632,6 +636,7 @@ class ChatService(
                     updateAt = Instant.now()
                 )
                 updateConversation(conversationId, updatedConversation)
+                runCatching { saveConversation(conversationId, updatedConversation) }
 
                 // 生成结束：取消 Live Update 通知，后台时发送完成通知
                 appEventBus.emit(
@@ -655,6 +660,15 @@ class ChatService(
                             appEventBus.tryEmit(
                                 AppEvent.ChatGenerationUpdate(conversationId, lastMessage, senderName)
                             )
+                        }
+
+                        // 进行中的消息节流落盘(≥400ms 一次)：刷新 Activity / 结束进程重开 /
+                        // 悬浮窗开关后仍能从 DB 恢复正在生成的回复(含工具调用、图片引用)，
+                        // 而不是只停留在内存态丢失；onCompletion/onSuccess 保证最终完整落盘
+                        val now = System.currentTimeMillis()
+                        if (now - lastPersistAt >= PERSIST_INTERVAL_MS) {
+                            lastPersistAt = now
+                            runCatching { saveConversation(conversationId, updatedConversation) }
                         }
                     }
                 }
@@ -730,7 +744,7 @@ class ChatService(
         includeDelegation: Boolean = true,
     ): List<Tool> = buildList {
         if (assistant.enableWebSearch) {
-            addAll(createSearchTools(settings) { params, content -> compressPageContent(params, content) })
+            addAll(createSearchTools(context, settings) { params, content -> compressPageContent(params, content) })
         }
         // 内置工具全部启用，不提供关闭选项（Agent 模式）；
         // 手机自动化工具需显式开启 enablePhoneAutomation，否则不注入，避免 AI 自发操作屏幕

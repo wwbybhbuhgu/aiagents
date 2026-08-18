@@ -154,7 +154,7 @@ fun Context.exportImage(
     activity: Activity,
     bitmap: Bitmap,
     fileName: String = "AIAgents_${System.currentTimeMillis()}.png"
-) {
+): Boolean {
     // 检查存储权限（Android 9及以下需要）
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -165,7 +165,7 @@ fun Context.exportImage(
                 arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
                 1
             )
-            return
+            return false
         }
     }
 
@@ -180,16 +180,20 @@ fun Context.exportImage(
                 put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
             }
             val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-            uri?.let {
-                outputStream = contentResolver.openOutputStream(it)
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream!!)
+                ?: error("MediaStore 插入失败")
+            outputStream = contentResolver.openOutputStream(uri)
+                ?: error("无法打开输出流: $uri")
+            if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)) {
+                error("图片压缩写入失败")
             }
         } else {
             // Android 9及以下直接写入文件
             val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
             val image = File(imagesDir, fileName)
             outputStream = FileOutputStream(image)
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)) {
+                error("图片压缩写入失败")
+            }
 
             // 通知图库更新
             val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
@@ -197,8 +201,7 @@ fun Context.exportImage(
             sendBroadcast(mediaScanIntent)
         }
         Log.i(TAG, "Image saved successfully: $fileName")
-    } catch (e: Exception) {
-        Log.e(TAG, "Failed to save image", e)
+        return true
     } finally {
         outputStream?.close()
     }
@@ -208,7 +211,7 @@ fun Context.exportImageFile(
     activity: Activity,
     file: File,
     fileName: String = "AIAgents_${System.currentTimeMillis()}.png"
-) {
+): Boolean {
     // 检查存储权限（Android 9及以下需要）
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -219,7 +222,7 @@ fun Context.exportImageFile(
                 arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
                 1
             )
-            return
+            return false
         }
     }
 
@@ -234,10 +237,10 @@ fun Context.exportImageFile(
                 put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
             }
             val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-            uri?.let {
-                outputStream = contentResolver.openOutputStream(it)
-                file.inputStream().copyTo(outputStream!!)
-            }
+                ?: error("MediaStore 插入失败")
+            outputStream = contentResolver.openOutputStream(uri)
+                ?: error("无法打开输出流: $uri")
+            file.inputStream().use { it.copyTo(outputStream!!) }
         } else {
             // Android 9及以下直接写入文件
             val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
@@ -250,8 +253,7 @@ fun Context.exportImageFile(
             sendBroadcast(mediaScanIntent)
         }
         Log.i(TAG, "Image file saved successfully: $fileName")
-    } catch (e: Exception) {
-        Log.e(TAG, "Failed to save image file", e)
+        return true
     } finally {
         outputStream?.close()
     }

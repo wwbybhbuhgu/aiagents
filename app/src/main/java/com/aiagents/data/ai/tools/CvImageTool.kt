@@ -59,7 +59,7 @@ fun buildCvImageTool(
         name = "cv_image",
         description = """
             Computer vision toolkit built on OpenCV. Analyze an image (e.g. a screenshot) and return pixel coordinates.
-            `path` accepts a workspace path (/workspace/... or /screenshots/... or /sd/...) or an Android path (/storage/emulated/0/...).
+            `path` accepts a workspace path (/workspace/... or /screenshots/... or /sd/... or /tool_outputs/...) or an Android path (/storage/emulated/0/...).
             Coordinate system: origin (0,0) at the top-left corner, x increases rightward, y increases downward.
             Operations:
             - grid: overlay a fine grid labeled with pixel coordinates (default), returns the gridded image for coordinate-based location.
@@ -83,7 +83,7 @@ fun buildCvImageTool(
                     })
                     put("path", buildJsonObject {
                         put("type", "string")
-                        put("description", "Workspace path (/workspace/..., /screenshots/..., /sd/...) or Android path (/storage/emulated/0/...) of the source image")
+                        put("description", "Workspace path (/workspace/..., /screenshots/..., /sd/..., /tool_outputs/...) or Android path (/storage/emulated/0/...) of the source image")
                     })
                     put("template_path", buildJsonObject {
                         put("type", "string")

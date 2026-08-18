@@ -49,7 +49,7 @@ fun buildImageAnalysisTool(
     name = "image_analysis",
     description = """
         Analyzes an image using the configured OCR/vision model.
-        Provide the absolute image path inside the workspace rootfs (e.g. /workspace/images/xxx.png),
+        Provide the absolute image path inside the workspace rootfs (e.g. /workspace/images/xxx.png, /tool_outputs/xxx.jpg, /upload/xxx.jpg),
         a `prompt` describing what to analyze or ask about the image,
         and optionally enable `grid` to overlay grid lines on the image
         (useful for layout/coordinate analysis, e.g. UI screenshots).
@@ -77,7 +77,7 @@ fun buildImageAnalysisTool(
             properties = buildJsonObject {
                 put("path", buildJsonObject {
                     put("type", "string")
-                    put("description", "Absolute image path inside the workspace rootfs, e.g. /workspace/images/xxx.png")
+                    put("description", "Absolute image path inside the workspace rootfs, e.g. /workspace/images/xxx.png or /tool_outputs/xxx.jpg")
                 })
                 put("prompt", buildJsonObject {
                     put("type", "string")

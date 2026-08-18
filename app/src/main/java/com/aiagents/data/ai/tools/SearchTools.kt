@@ -1,5 +1,10 @@
 package com.aiagents.data.ai.tools
 
+import android.content.Context
+import java.io.File
+import java.time.LocalDate
+import java.util.concurrent.TimeUnit
+import kotlin.uuid.Uuid
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -14,14 +19,16 @@ import com.aiagents.ai.core.InputSchema
 import com.aiagents.ai.core.Tool
 import com.aiagents.ai.ui.UIMessagePart
 import com.aiagents.data.datastore.Settings
+import com.aiagents.data.files.FileFolders
 import com.aiagents.utils.JsonInstantPretty
 import com.aiagents.utils.toLocalString
 import com.aiagents.search.SearchService
 import com.aiagents.search.SearchServiceOptions
-import java.time.LocalDate
-import kotlin.uuid.Uuid
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
 fun createSearchTools(
+    context: Context,
     settings: Settings,
     compress: suspend (toolParams: JsonObject, content: String) -> String = { _, content -> content },
 ): Set<Tool> {
@@ -55,6 +62,8 @@ fun createSearchTools(
                     - When images help the user understand the answer, embed relevant ones using Markdown: `![](url)`.
                     - Embed 2 to 4 images, and only use urls from `images[]` (never fabricate or alter urls).
                     - Usually place the images at the very beginning of your reply; skip them entirely if none are relevant.
+                    - Each image is also downloaded and saved locally; the `downloaded_images[]` array maps original urls to local paths like `/tool_outputs/search_img_xxx.jpg`.
+                    - Use `image_analysis` or an OCR tool on a local path (e.g. `/tool_outputs/search_img_xxx.jpg`) when you need to actually read the image content.
 
                     Example:
                     The capital of France is Paris. [citation,example.com](abc123)
@@ -105,6 +114,10 @@ fun createSearchTools(
                                         put("index", JsonPrimitive(index + 1))
                                     })
                                 })
+                            val imageUrls = (map["images"] as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+                            if (imageUrls.isNotEmpty()) {
+                                map["downloaded_images"] = JsonArray(downloadSearchImages(context, imageUrls))
+                            }
                             JsonObject(map)
                         }
                     listOf(UIMessagePart.Text(results.toString()))
@@ -160,4 +173,43 @@ private fun resolveSearchOptions(settings: Settings, params: JsonObject): Search
     return settings.searchServices.getOrElse(
         index = settings.searchServiceSelected,
         defaultValue = { SearchServiceOptions.DEFAULT })
+}
+
+private const val SEARCH_IMAGE_MAX_BYTES = 20 * 1024 * 1024
+private const val SEARCH_IMAGE_MAX_COUNT = 20
+
+/** 下载搜索到的网络图片到工具输出目录(filesDir/tool_outputs), 返回 [{url, path, size}] 列表 */
+private fun downloadSearchImages(context: Context, imageUrls: List<String>): List<JsonObject> {
+    val client = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .followRedirects(true)
+        .build()
+    val dir = File(context.filesDir, FileFolders.TOOL_OUTPUTS).apply { mkdirs() }
+    val timestamp = System.currentTimeMillis()
+    val results = mutableListOf<JsonObject>()
+    imageUrls.take(SEARCH_IMAGE_MAX_COUNT).forEachIndexed { index, url ->
+        if (!url.startsWith("http://") && !url.startsWith("https://")) return@forEachIndexed
+        val fileName = "search_img_${timestamp}_${index + 1}.jpg"
+        val target = File(dir, fileName)
+        runCatching {
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", "AIAgents/2.4.5 (Android)")
+                .get()
+                .build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@use
+                val bytes = response.body?.bytes() ?: return@use
+                if (bytes.isEmpty() || bytes.size > SEARCH_IMAGE_MAX_BYTES) return@use
+                target.writeBytes(bytes)
+                results += buildJsonObject {
+                    put("url", url)
+                    put("path", "/tool_outputs/$fileName")
+                    put("size", bytes.size)
+                }
+            }
+        }
+    }
+    return results
 }
