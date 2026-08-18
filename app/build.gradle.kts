@@ -292,6 +292,8 @@ dependencies {
     implementation(project(":highlight"))
     implementation(project(":search"))
     implementation(project(":speech"))
+    // sherpa-onnx AAR: speech 模块用 compileOnly 引用(避免 library 打包本地 aar), 实际由 app 引入
+    implementation(files("../speech/libs/sherpa-onnx-1.13.4.aar"))
     implementation(project(":common"))
     implementation(project(":material3"))
     implementation(project(":workspace"))

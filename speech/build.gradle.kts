@@ -53,7 +53,9 @@ dependencies {
     implementation(libs.okhttp)
 
     // sherpa-onnx: 本地 TTS 运行库 (预编译 AAR, 自带 ONNX Runtime)
-    implementation(files("libs/sherpa-onnx-1.13.4.aar"))
+    // compileOnly: 仅编译时引用, 不打包进 speech 的 AAR(AGP 禁止 library 模块携带本地 aar 依赖)
+    // 实际 aar 由 app 模块引入
+    compileOnly(files("libs/sherpa-onnx-1.13.4.aar"))
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
