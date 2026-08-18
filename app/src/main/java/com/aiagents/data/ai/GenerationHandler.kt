@@ -404,13 +404,13 @@ class GenerationHandler(
                     append(tool.systemPrompt(model, messages))
                 }
 
-                // 内部协议: AI 可在 Markdown 中直接用 aiagents-file:// 协议引用工作区文件
+                // 内部协议: AI 在 Markdown 中用 content://(Android 原生文件协议) 引用工作区文件
                 appendLine()
-                appendLine("You can reference files directly in your markdown output using the internal protocol:")
-                appendLine("- Format: `![description](aiagents-file://<workspaceId>/<container-absolute-path>)`")
-                appendLine("- The `<workspaceId>` is ALWAYS your current workspace's ID (see the <workspace> section); paste it as-is and append the absolute path inside the container verbatim.")
-                appendLine("- Use the FULL absolute path from the container root: `/workspace` is the workspace file area root (persistent work files), so a file at the workspace root is `/workspace/<file>`. Other mounts use `/upload/<file>`, `/screenshots/<file>`, `/sd/<file>`, `/memories/<file>`, `/skills/<file>`, `/tool_outputs/<file>`.")
-                appendLine("- Examples: `![screenshot](aiagents-file://<workspaceId>/workspace/images/xxx.png)` or `![uploaded](aiagents-file://<workspaceId>/upload/xxx.jpg)`")
+                appendLine("You can display files (images/videos/audio) inline in your markdown output using Android's native content:// file protocol:")
+                appendLine("- To show a workspace file, first call the `show_file` tool with its container path. It returns a `content://` uri (e.g. `content://<app>.workspacefile/<workspaceId>/workspace/images/xxx.png`) whose path part is the full container absolute path.")
+                appendLine("- Then embed it in markdown: `![description](<uri>)` — paste the returned uri verbatim (it already contains the workspace id + container path).")
+                appendLine("- The app resolves `content://` natively (via a custom ContentProvider) to serve the file from the workspace rootfs; no other protocol is supported for inline files.")
+                appendLine("- Workspace tools return container absolute paths (e.g. `/workspace/images/xxx.png`). To inline such a file, pass that path to `show_file` to obtain its content:// uri, then embed the uri.")
                 appendLine("- This displays the file inline with no conversion step; the app resolves it directly.")
 
                 // 内容边界声明: 明确没有应用层的前置审核/限制, 由模型自身与后端承担判断

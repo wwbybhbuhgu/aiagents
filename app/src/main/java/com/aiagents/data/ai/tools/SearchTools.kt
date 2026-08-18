@@ -1,7 +1,7 @@
 package com.aiagents.data.ai.tools
 
 import android.content.Context
-import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import java.io.File
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
@@ -227,30 +227,18 @@ private suspend fun downloadSearchImages(
                     inputStream = bytes.inputStream(),
                 )
                 val rootfs = "/workspace/images/${entry.name}"
-                val hostFile = workspaceRepository.resolveRootfsHostFile(workspaceId, rootfs)
-                val contentUri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    hostFile,
-                ).toString()
+                // content:// 路径部分直接对应容器绝对路径, 与 show_file 一致
+                val contentUri = "content://${context.packageName}.workspacefile/$workspaceId$rootfs"
                 contentUri to rootfs
             } else {
                 val target = File(fallbackDir, fileName)
                 target.writeBytes(bytes)
-                FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    target,
-                ).toString() to "/tool_outputs/$fileName"
+                target.toUri().toString() to "/tool_outputs/$fileName"
             }
         }.getOrElse { error ->
             val target = File(fallbackDir, fileName)
             target.writeBytes(bytes)
-            FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                target,
-            ).toString() to "/tool_outputs/$fileName"
+            target.toUri().toString() to "/tool_outputs/$fileName"
         }
         results += buildJsonObject {
             put("url", url)
