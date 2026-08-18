@@ -27,6 +27,7 @@ import com.aiagents.utils.toLocalString
 import com.aiagents.search.SearchService
 import com.aiagents.search.SearchServiceOptions
 import com.aiagents.workspace.WorkspaceStorageArea
+import kotlinx.coroutines.withTimeout
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -185,6 +186,7 @@ private fun resolveSearchOptions(settings: Settings, params: JsonObject): Search
 
 private const val SEARCH_IMAGE_MAX_BYTES = 20 * 1024 * 1024
 private const val SEARCH_IMAGE_MAX_COUNT = 20
+private const val SEARCH_IMAGE_TOTAL_TIMEOUT_MS = 90_000L
 
 /** 下载搜索到的网络图片到工作区 /workspace/images (持久, 启动清理不删除), 返回 [{url, path, size}] 列表 */
 private suspend fun downloadSearchImages(
@@ -196,55 +198,59 @@ private suspend fun downloadSearchImages(
     val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(45, TimeUnit.SECONDS)
         .followRedirects(true)
         .build()
     val fallbackDir = File(context.filesDir, FileFolders.TOOL_OUTPUTS).apply { mkdirs() }
     val timestamp = System.currentTimeMillis()
     val results = mutableListOf<JsonObject>()
-    imageUrls.take(SEARCH_IMAGE_MAX_COUNT).forEachIndexed { index, url ->
-        if (!url.startsWith("http://") && !url.startsWith("https://")) return@forEachIndexed
-        val fileName = "search_img_${timestamp}_${index + 1}.jpg"
-        val bytes = runCatching {
-            val request = Request.Builder()
-                .url(url)
-                .header("User-Agent", "AIAgents/2.4.5 (Android)")
-                .get()
-                .build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@use null
-                val body = response.body?.bytes() ?: return@use null
-                if (body.isEmpty() || body.size > SEARCH_IMAGE_MAX_BYTES) return@use null
-                body
-            }
-        }.getOrNull() ?: return@forEachIndexed
-        val (uri, rootfsPath) = runCatching {
-            if (!workspaceId.isNullOrBlank() && workspaceRepository != null) {
-                val entry = workspaceRepository.importFile(
-                    id = workspaceId,
-                    area = WorkspaceStorageArea.FILES,
-                    destinationPath = "/workspace/images",
-                    fileName = fileName,
-                    inputStream = bytes.inputStream(),
-                )
-                val rootfs = "/workspace/images/${entry.name}"
-                // content:// 路径部分直接对应容器绝对路径, 与 show_file 一致
-                val contentUri = "content://${context.packageName}.workspacefile/$workspaceId$rootfs"
-                contentUri to rootfs
-            } else {
+    // 整体下载设总超时: 到期后停止下载剩余图片, 避免卡住工具调用
+    withTimeout(SEARCH_IMAGE_TOTAL_TIMEOUT_MS) {
+        imageUrls.take(SEARCH_IMAGE_MAX_COUNT).forEachIndexed { index, url ->
+            if (!url.startsWith("http://") && !url.startsWith("https://")) return@forEachIndexed
+            val fileName = "search_img_${timestamp}_${index + 1}.jpg"
+            val bytes = runCatching {
+                val request = Request.Builder()
+                    .url(url)
+                    .header("User-Agent", "AIAgents/2.4.5 (Android)")
+                    .get()
+                    .build()
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) return@use null
+                    val body = response.body?.bytes() ?: return@use null
+                    if (body.isEmpty() || body.size > SEARCH_IMAGE_MAX_BYTES) return@use null
+                    body
+                }
+            }.getOrNull() ?: return@forEachIndexed
+            val (uri, rootfsPath) = runCatching {
+                if (!workspaceId.isNullOrBlank() && workspaceRepository != null) {
+                    val entry = workspaceRepository.importFile(
+                        id = workspaceId,
+                        area = WorkspaceStorageArea.FILES,
+                        destinationPath = "/workspace/images",
+                        fileName = fileName,
+                        inputStream = bytes.inputStream(),
+                    )
+                    val rootfs = "/workspace/images/${entry.name}"
+                    // content:// 路径部分直接对应容器绝对路径, 与 show_file 一致
+                    val contentUri = "content://${context.packageName}.workspacefile/$workspaceId$rootfs"
+                    contentUri to rootfs
+                } else {
+                    val target = File(fallbackDir, fileName)
+                    target.writeBytes(bytes)
+                    target.toUri().toString() to "/tool_outputs/$fileName"
+                }
+            }.getOrElse { error ->
                 val target = File(fallbackDir, fileName)
                 target.writeBytes(bytes)
                 target.toUri().toString() to "/tool_outputs/$fileName"
             }
-        }.getOrElse { error ->
-            val target = File(fallbackDir, fileName)
-            target.writeBytes(bytes)
-            target.toUri().toString() to "/tool_outputs/$fileName"
-        }
-        results += buildJsonObject {
-            put("url", url)
-            put("uri", uri)
-            put("path", rootfsPath)
-            put("size", bytes.size)
+            results += buildJsonObject {
+                put("url", url)
+                put("uri", uri)
+                put("path", rootfsPath)
+                put("size", bytes.size)
+            }
         }
     }
     return results
