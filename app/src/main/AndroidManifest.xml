@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools">
+
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.CAMERA" />
+  <uses-permission android:name="android.permission.RECORD_AUDIO" />
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    android:maxSdkVersion="28" />
+  <!-- Android 11+ 全文件访问(SD 目录等外部挂载) -->
+  <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+    tools:ignore="ScopedStorage" />
+  <!-- Android 13+ 媒体权限 -->
+  <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+  <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+  <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+  <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+  <uses-permission
+    android:name="android.permission.PACKAGE_USAGE_STATS"
+    tools:ignore="ProtectedPermissions" />
+  <uses-permission android:name="android.permission.READ_CALENDAR" />
+  <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+  <uses-permission android:name="android.permission.READ_SMS" />
+  <!-- 精确闹钟: AI 提醒准点触发(Android 12+ 需用户到设置页开启) -->
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+  <!-- 严格闹钟: 锁屏/息屏时全屏显示闹钟界面 -->
+  <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+  <!-- 开机后重排提醒闹钟 -->
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+  <!-- 悬浮窗: 用于无障碍开启引导/提示气泡 -->
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+  <!-- 前台服务(悬浮窗服务需要) -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+  <!-- 麦克风前台服务: 应用退到后台时让悬浮窗/语音工具仍能访问麦克风(while-in-use) -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+  <!-- 通知监听: 读取其他应用的系统通知 -->
+  <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
+
+  <!-- ========== 非 Root 自动化: 普通权限(安装时自动授予) ========== -->
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+  <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+  <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+  <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+  <uses-permission android:name="android.permission.REORDER_TASKS" />
+  <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+  <uses-permission android:name="android.permission.SET_ALARM" />
+  <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+  <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+  <uses-permission android:name="android.permission.TRANSMIT_IR" />
+  <uses-permission android:name="android.permission.FLASHLIGHT" />
+  <uses-permission android:name="android.permission.SET_WALLPAPER" />
+
+  <!-- ========== 非 Root 自动化: 危险权限(需运行时弹窗或 adb pm grant) ========== -->
+  <uses-permission
+    android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+  <uses-permission android:name="android.permission.READ_CONTACTS" />
+  <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+  <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+  <uses-permission android:name="android.permission.CALL_PHONE" />
+  <uses-permission android:name="android.permission.SEND_SMS" />
+  <uses-permission android:name="android.permission.RECEIVE_SMS" />
+  <uses-permission android:name="android.permission.BODY_SENSORS" />
+  <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
+  <!-- ========== 非 Root 自动化: 特殊权限(需 adb 或手动到设置页开启) ========== -->
+  <uses-permission
+    android:name="android.permission.WRITE_SECURE_SETTINGS"
+    tools:ignore="ProtectedPermissions" />
+  <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+  <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+  <uses-feature
+    android:name="android.hardware.camera"
+    android:required="false" />
+  <uses-feature
+    android:name="android.hardware.camera.autofocus"
+    android:required="false" />
+
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.TTS_SERVICE" />
+    </intent>
+    <!-- 用于解析屏幕使用时间里各 App 的名称(可见性受 Android 11+ 包可见性限制) -->
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.LAUNCHER" />
+    </intent>
+    <!-- 用于识别桌面 launcher 以便在屏幕使用时间中排除 -->
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.HOME" />
+    </intent>
+  </queries>
+
+  <application
+    android:name=".AIAgentsApp"
+    android:largeHeap="true"
+    android:allowBackup="true"
+    android:appCategory="productivity"
+    android:dataExtractionRules="@xml/data_extraction_rules"
+    android:enableOnBackInvokedCallback="true"
+    android:fullBackupContent="@xml/backup_rules"
+    android:icon="@mipmap/ic_launcher"
+    android:label="@string/app_name"
+    android:supportsRtl="true"
+    android:theme="@style/Theme.AIAgents"
+    android:usesCleartextTraffic="true"
+    tools:targetApi="33">
+    <activity
+      android:name=".ui.activity.SafeModeActivity"
+      android:exported="false"
+      android:label="@string/title_activity_safe_mode"
+      android:theme="@style/Theme.AIAgents" />
+    <activity
+      android:name=".AlarmActivity"
+      android:excludeFromRecents="true"
+      android:exported="false"
+      android:launchMode="singleTask"
+      android:showWhenLocked="true"
+      android:turnScreenOn="true"
+      android:theme="@style/Theme.AIAgents"
+      tools:targetApi="27" />
+    <activity
+      android:name=".RouteActivity"
+      android:configChanges="keyboardHidden|orientation|screenSize"
+      android:exported="true"
+      android:importantForAutofill="noExcludeDescendants"
+      android:theme="@style/Theme.AIAgents"
+      android:windowSoftInputMode="adjustResize">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.SEND" />
+
+        <category android:name="android.intent.category.DEFAULT" />
+
+        <data android:mimeType="text/plain" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.PROCESS_TEXT" />
+
+        <category android:name="android.intent.category.DEFAULT" />
+
+        <data android:mimeType="text/plain" />
+      </intent-filter>
+
+      <meta-data
+        android:name="android.app.shortcuts"
+        android:resource="@xml/shortcuts" />
+    </activity>
+    <activity
+      android:name=".ui.activity.ShortcutHandlerActivity"
+      android:exported="true"
+      android:theme="@android:style/Theme.Translucent.NoTitleBar">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+
+        <category android:name="android.intent.category.DEFAULT" />
+
+        <data
+          android:host="shortcut"
+          android:scheme="aiagents" />
+      </intent-filter>
+    </activity>
+    <activity
+      android:name=".ui.activity.McpOAuthCallbackActivity"
+      android:exported="true"
+      android:launchMode="singleTask"
+      android:theme="@android:style/Theme.Translucent.NoTitleBar">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+
+        <data
+          android:host="mcp-oauth-callback"
+          android:scheme="aiagents" />
+      </intent-filter>
+    </activity>
+    <activity
+      android:name="com.yalantis.ucrop.UCropActivity"
+      android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
+    <service
+      android:name=".service.WebServerService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="local web server for LLM chat UI" />
+    </service>
+
+    <service
+      android:name=".service.ContainerService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="persistent LLM agent container" />
+    </service>
+
+    <!-- 无障碍服务: 获取屏幕文本供 AI 读取(不采集图片) -->
+    <service
+      android:name=".service.ScreenTextAccessibilityService"
+      android:exported="false"
+      android:label="@string/accessibility_service_label"
+      android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+      <intent-filter>
+        <action android:name="android.accessibilityservice.AccessibilityService" />
+      </intent-filter>
+      <meta-data
+        android:name="android.accessibilityservice"
+        android:resource="@xml/accessibility_service_config" />
+    </service>
+
+<!-- 屏幕阅读悬浮窗前台服务: 显示在其他应用之上 -->
+    <service
+      android:name=".service.ScreenReaderOverlayService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="screen reader overlay for AI assistant" />
+    </service>
+
+    <!-- 麦克风前台服务: 应用退到后台后悬浮窗录音/语音工具仍可访问麦克风 -->
+    <!-- 关键: 必须在主 Activity 仍在台(前台)时拉起, 否则 Android 12+ 拒绝创建 microphone 类型 FGS -->
+    <service
+      android:name=".service.MicForegroundService"
+      android:exported="false"
+      android:foregroundServiceType="microphone" />
+
+    <!-- AI 内置浏览器悬浮窗前台服务: 可悬浮在其他应用之上, 供 AI 浏览器自动化 -->
+    <service
+      android:name=".service.BrowserOverlayService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="AI browser automation overlay" />
+    </service>
+
+    <!-- 严格闹钟响铃前台服务: 应用被杀/后台时也能持续响铃 + 悬浮窗闹钟界面 -->
+    <service
+      android:name=".service.AlarmOverlayService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="ringing alarm screen for AI-created alarms" />
+    </service>
+
+    <!-- 通知监听服务: 读取其他应用的系统通知 -->
+    <service
+      android:name=".service.AppNotificationListenerService"
+      android:exported="false"
+      android:label="@string/notification_listener_label"
+      android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+      <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+      </intent-filter>
+    </service>
+
+    <!-- 内置 AI 输入法(融合自 ADBKeyBoard): 供 AI 以输入法方式向其他应用输入文本 -->
+    <service
+      android:name=".ime.AdbIME"
+      android:label="@string/ime_name"
+      android:exported="false"
+      android:permission="android.permission.BIND_INPUT_METHOD">
+      <intent-filter>
+        <action android:name="android.view.InputMethod" />
+      </intent-filter>
+      <meta-data
+        android:name="android.view.im"
+        android:resource="@xml/ime_methods" />
+    </service>
+
+    <!-- 提醒闹钟广播接收器: 触发通知 + 开机重排 -->
+    <receiver
+      android:name=".service.ReminderReceiver"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="com.aiagents.action.REMINDER_ALARM" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+      </intent-filter>
+    </receiver>
+
+    <provider
+      android:name="androidx.core.content.FileProvider"
+      android:authorities="${applicationId}.fileprovider"
+      android:exported="false"
+      android:grantUriPermissions="true">
+      <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/file_paths" />
+    </provider>
+    <!-- Shizuku: 以 adb/root 权限运行进程(自动化/截图); 提供者用于接收 Shizuku server 推送的 binder 并自动请求权限 -->
+    <provider
+      android:name="rikka.shizuku.ShizukuProvider"
+      android:authorities="${applicationId}.shizuku"
+      android:exported="true"
+      android:multiprocess="false"
+      android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+    <provider
+      android:name=".data.provider.WorkspaceDocumentsProvider"
+      android:authorities="${applicationId}.documents"
+      android:exported="true"
+      android:grantUriPermissions="true"
+      android:permission="android.permission.MANAGE_DOCUMENTS">
+      <intent-filter>
+        <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+      </intent-filter>
+    </provider>
+    <provider
+      android:name="androidx.startup.InitializationProvider"
+      android:authorities="${applicationId}.androidx-startup"
+      android:exported="false"
+      tools:node="merge">
+      <meta-data
+        android:name="androidx.work.WorkManagerInitializer"
+        android:value="androidx.startup"
+        tools:node="remove" />
+    </provider>
+
+    <!-- FileProvider: 为工作区文件生成 content:// URI, 供 Markdown 内联图片使用 -->
+    <provider
+      android:name="androidx.core.content.FileProvider"
+      android:authorities="${applicationId}.fileprovider"
+      android:exported="false"
+      android:grantUriPermissions="true">
+      <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/file_paths" />
+    </provider>
+  </application>
+
+</manifest>
