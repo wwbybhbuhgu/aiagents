@@ -263,6 +263,7 @@
   <string name="tool_name_file_share">分享檔案</string>
   <string name="tool_name_show_file">展示檔案</string>
   <string name="tool_name_render_html_card">HTML卡片</string>
+  <string name="tool_name_activity">開啟Activity</string>
   <string name="tool_name_use_skill">使用技能</string>
   <string name="tool_name_cv_image">電腦視覺</string>
   <string name="tool_name_edit_image">編輯圖片</string>

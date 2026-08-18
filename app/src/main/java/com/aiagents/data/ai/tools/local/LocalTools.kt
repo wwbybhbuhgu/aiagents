@@ -56,6 +56,8 @@ class LocalTools(
 
     val appLaunchTool by lazy { buildAppLaunchTool(context) }
 
+    val activityTool by lazy { buildActivityTool(context) }
+
     val stopAppTool by lazy { buildStopAppTool(context) }
 
     val openUrlTool by lazy { buildOpenUrlTool(context) }
@@ -144,6 +146,7 @@ class LocalTools(
             tools.add(autoShellTool)
             tools.add(appListTool)
             tools.add(appLaunchTool)
+            tools.add(activityTool)
             tools.add(stopAppTool)
             tools.add(openUrlTool)
             tools.add(openDialerTool)

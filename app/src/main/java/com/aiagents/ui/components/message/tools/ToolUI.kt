@@ -123,6 +123,7 @@ internal fun toolDisplayName(toolName: String): String? = when (toolName) {
     "file_share" -> stringResource(R.string.tool_name_file_share)
     "show_file" -> stringResource(R.string.tool_name_show_file)
     "render_html_card" -> stringResource(R.string.tool_name_render_html_card)
+    "activity" -> stringResource(R.string.tool_name_activity)
     "use_skill" -> stringResource(R.string.tool_name_use_skill)
     "recent_chats" -> stringResource(R.string.tool_name_recent_chats)
     "conversation_search" -> stringResource(R.string.tool_name_conversation_search)
@@ -215,6 +216,7 @@ internal fun toolIcon(toolName: String): ImageVector = when (toolName) {
     "file_share" -> HugeIcons.Share01
     "show_file" -> HugeIcons.Eye
     "render_html_card" -> HugeIcons.Browser
+    "activity" -> HugeIcons.Code
     "create_assistant" -> HugeIcons.UserAdd01
     "edit_assistant" -> HugeIcons.UserEdit01
     "import_to_workspace" -> HugeIcons.Upload01

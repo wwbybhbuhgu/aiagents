@@ -263,6 +263,7 @@
   <string name="tool_name_file_share">Share file</string>
   <string name="tool_name_show_file">Show file</string>
   <string name="tool_name_render_html_card">HTML card</string>
+  <string name="tool_name_activity">Open activity</string>
   <string name="tool_name_use_skill">Use skill</string>
   <string name="tool_name_cv_image">Computer vision</string>
   <string name="tool_name_edit_image">Edit image</string>
