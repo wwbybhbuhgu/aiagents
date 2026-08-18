@@ -78,6 +78,12 @@ jobs:
 
       - name: Prepare build files
         run: |
+          # 下载 sherpa-onnx AAR(本地未入库, CI 需在线获取)
+          mkdir -p speech/libs
+          curl -fL --retry 3 -o speech/libs/sherpa-onnx-1.13.4.aar \
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/sherpa-onnx-1.13.4.aar"
+          ls -la speech/libs/
+
           # 解码base64编码的keystore文件
           echo "${{ secrets.KEY_BASE64 }}" | base64 -d > app/app.key
 
