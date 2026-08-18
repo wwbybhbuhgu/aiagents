@@ -1,6 +1,6 @@
 name: Close Blank Issues
 
-on:
+"on":
   issues:
     types: [opened]
 
