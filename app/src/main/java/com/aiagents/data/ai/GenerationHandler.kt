@@ -407,11 +407,10 @@ class GenerationHandler(
                 // 内部协议: AI 在 Markdown 中用 content://(Android 原生文件协议) 引用工作区文件
                 appendLine()
                 appendLine("Inline file display via content:// (markdown):")
-                appendLine("- LIMITATION: markdown can ONLY render IMAGES inline. It CANNOT play audio, play video, or display a text/document file. Do not try to embed audio/video/text files with the content:// protocol in markdown — they will not render.")
-                appendLine("- `content://` in markdown is ONLY for images (e.g. `![pic](content://<app>.workspacefile/<workspaceId>/workspace/images/xxx.png)`). Paste the uri WITHOUT angle brackets (`![pic](content://...)`, not `![pic](<content://...>)`).")
-                appendLine("- To obtain an inline image uri: call `show_file` with the file's container path; it returns a `content://` uri you can embed.")
-                appendLine("- DO NOT paste a plain text/document/audio/video file's content or its path directly into markdown. Text documents and all non-image media are shown through the `show_file` tool (or `render_html_card`), which renders them with the proper built-in viewer/player.")
-                appendLine("- In short: markdown inline = images only. Everything else (audio, video, pdf, text/markdown documents, zip, etc.) → use the `show_file` tool so it renders as a proper media/document card. That is exactly the value of `show_file`.")
+                appendLine("- markdown can ONLY render IMAGES inline. It CANNOT play audio, play video, or display a text/document file.")
+                appendLine("- For IMAGES: use markdown directly, NOT `show_file`. Build the uri as `content://<app>.workspacefile/<workspaceId><path>` where `<path>` is the image's container path (e.g. /workspace/images/xxx.png) from the generating/search tool result. Embed WITHOUT angle brackets: `![alt](content://com.aiagents.debug.workspacefile/<workspaceId>/workspace/images/xxx.png)` (not `![pic](<content://...>)`).")
+                appendLine("- For VIDEO, AUDIO, PDF, text/markdown documents, zip and all other non-image files: use the `show_file` tool (it renders a built-in player/viewer). Do NOT paste their content or path into markdown.")
+                appendLine("- In short: images → markdown inline via content uri; everything non-image → `show_file`. That is exactly why `show_file` exists.")
 
                 // 内容边界声明: 明确没有应用层的前置审核/限制, 由模型自身与后端承担判断
                 appendLine()

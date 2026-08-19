@@ -32,16 +32,23 @@ fun buildShowFileTool(
 ): Tool = Tool(
     name = "show_file",
     description = """
-        Displays a file from the workspace directly in the conversation with a built-in viewer/player.
-        Pass the absolute path inside the workspace rootfs (e.g. /workspace/images/xxx.png, /workspace/media/video.mp4, /workspace/docs/notes.md).
-        Images render inline as a picture; videos and audio render with a BUILT-IN player (no external app needed); documents (text/markdown/pdf/zip etc.) render as a document card.
+        Displays a non-image file from the workspace with a built-in viewer/player.
+        Pass the absolute path inside the workspace rootfs (e.g. /workspace/media/video.mp4, /workspace/docs/notes.md).
 
-        IMPORTANT — this is the ONLY way to display non-image files:
-        - Markdown can ONLY render images inline. It CANNOT play audio/video and CANNOT show text/document files.
-        - So for any audio, video, pdf, text/markdown document, or other file: call `show_file` (do NOT paste the file's contents or path into your markdown reply — it will not render).
-        - For images you may either call `show_file` (inline card) or embed the returned content:// uri in markdown as `![desc](<uri>)`.
+        WHEN TO USE:
+        - Use `show_file` for VIDEO, AUDIO, PDF, text/markdown documents, zip and any other non-image file.
+        - For IMAGES: DO NOT use `show_file`. Instead embed the image directly in your markdown reply using the
+          content:// uri. First call the `workspace_read_file`/`image_generate`/`search` tool that provides the
+          image, then build the uri as `content://<app>.workspacefile/<workspaceId><path>` and embed it:
+          `![alt](content://com.aiagents.debug.workspacefile/<workspaceId>/workspace/images/xxx.png)`.
+          (Image path comes from the tool result, e.g. /workspace/images/xxx.png.)
+        - Prefer markdown for images; only fall back to `show_file` for an image if it is a special case.
 
-        Use this whenever the user wants to SEE or PREVIEW a generated/workspace file of ANY type.
+        WHY: markdown can ONLY render images inline — it cannot play audio/video or show text/document files.
+        So use `show_file` for those, and markdown for images.
+
+        URL format reminder: content uri = "content://" + "<app>.workspacefile" + "/" + workspaceId + containerPath,
+        e.g. `content://com.aiagents.debug.workspacefile/<workspaceId>/workspace/images/xxx.png`. No angle brackets.
     """.trimIndent(),
     parameters = {
         InputSchema.Obj(

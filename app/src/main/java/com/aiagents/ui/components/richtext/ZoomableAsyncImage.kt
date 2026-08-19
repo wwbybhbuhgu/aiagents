@@ -54,6 +54,9 @@ fun ZoomableAsyncImage(
         ImageLoader.Builder(context)
             .crossfade(true)
             .components {
+                add(
+                    com.aiagents.ui.media.WorkspaceMtimeKeyer("${context.packageName}.workspacefile")
+                )
                 add(WorkspaceFileFetcher.Factory(workspaceRepository = workspaceRepository))
             }
             .build()

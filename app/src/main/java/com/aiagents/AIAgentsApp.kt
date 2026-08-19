@@ -49,6 +49,7 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import coil3.svg.SvgDecoder
 import com.aiagents.ui.media.WorkspaceFileFetcher
+import com.aiagents.ui.media.WorkspaceMtimeKeyer
 import okhttp3.OkHttpClient
 import org.koin.java.KoinJavaComponent.getKoin
 import org.koin.android.ext.android.get
@@ -129,6 +130,9 @@ class AIAgentsApp : Application() {
             ImageLoader.Builder(this)
                 .crossfade(true)
                 .components {
+                    add(
+                        WorkspaceMtimeKeyer("${packageName}.workspacefile")
+                    )
                     add(
                         OkHttpNetworkFetcherFactory(
                             callFactory = { okHttpClient },
