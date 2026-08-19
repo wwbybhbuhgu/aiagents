@@ -68,9 +68,11 @@ fun createSearchTools(
                     - When images help the user understand the answer, embed relevant ones using Markdown: `![](<uri>)`.
                     - Embed 2 to 4 images, and only use urls from `images[]` (never fabricate or alter urls).
                     - Usually place the images at the very beginning of your reply; skip them entirely if none are relevant.
-                    - Each image is downloaded and saved to the workspace; the `downloaded_images[]` array maps original urls to two fields per image:
+                    - Each image is downloaded and saved to the workspace; the `downloaded_images[]` array maps original urls to fields per image:
                       - `uri`: an app content URI for inline display — embed it directly as `![](<uri>)` (paste the content:// string as-is, do NOT wrap it in `<` and `>`).
-                      - `path`: the container absolute path (e.g. `/workspace/images/search_img_xxx.jpg`) — use this with `image_analysis` or an OCR tool to actually read the image content.
+                      - `path`: the container absolute path (e.g. `/workspace/images/search_img_xxx.jpg`).
+                      - `title`: a readable title derived from the image's URL.
+                      - `context`: the corresponding search-result page's body text (title + source + snippet). Use `title` and `context` to know what each image depicts and its source page — you do NOT need to run image_analysis/OCR on every image just to see what it shows; only run image_analysis when the user explicitly asks for OCR/reading text or detailed visual analysis.
 
                     Example:
                     The capital of France is Paris. [citation,example.com](abc123)
@@ -123,8 +125,11 @@ fun createSearchTools(
                                 })
                             val imageUrls = (map["images"] as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
                             if (imageUrls.isNotEmpty()) {
+                                val items = (map["items"] as? JsonArray)?.mapNotNull { item ->
+                                    item.jsonObject.takeIf { it.isNotEmpty() }
+                                } ?: emptyList()
                                 map["downloaded_images"] = JsonArray(
-                                    downloadSearchImages(context, workspaceId, workspaceRepository, imageUrls)
+                                    downloadSearchImages(context, workspaceId, workspaceRepository, imageUrls, items)
                                 )
                             }
                             JsonObject(map)
@@ -188,12 +193,13 @@ private const val SEARCH_IMAGE_MAX_BYTES = 20 * 1024 * 1024
 private const val SEARCH_IMAGE_MAX_COUNT = 20
 private const val SEARCH_IMAGE_TOTAL_TIMEOUT_MS = 90_000L
 
-/** 下载搜索到的网络图片到工作区 /workspace/images (持久, 启动清理不删除), 返回 [{url, path, size}] 列表 */
+/** 下载搜索到的网络图片到工作区 /workspace/images (持久, 启动清理不删除), 返回 [{url, uri, path, size, title, context}] 列表 */
 private suspend fun downloadSearchImages(
     context: Context,
     workspaceId: String?,
     workspaceRepository: WorkspaceRepository?,
     imageUrls: List<String>,
+    searchItems: List<JsonObject> = emptyList(),
 ): List<JsonObject> {
     val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -250,8 +256,61 @@ private suspend fun downloadSearchImages(
                 put("uri", uri)
                 put("path", rootfsPath)
                 put("size", bytes.size)
+                put("title", deriveImageTitle(url))
+                put("context", deriveImageContext(url, searchItems))
             }
         }
     }
     return results
 }
+
+/**
+ * 从图片 URL 推导一个可读标题, 供 AI 直接了解图片内容, 避免每次都调用
+ * image_analysis/OCR 看图。
+ * 规则: 取 URL 路径最后一段(带查询串则剥掉), URL 解码, 去掉扩展名,
+ * 把分隔符(- _ . %20 +)换成空格, 压缩多余空白并截断。
+ */
+private fun deriveImageTitle(url: String): String {
+    if (url.isBlank()) return "image"
+    val path = url.substringBefore('?').substringBefore('#')
+    var name = path.substringAfterLast('/').takeIf { it.isNotBlank() } ?: return "image"
+    name = name.substringBeforeLast('.').ifBlank { name }
+    name = runCatching { java.net.URLDecoder.decode(name, "UTF-8") }.getOrElse { name }
+    name = name.replace("_", " ").replace("-", " ").replace("+", " ").replace("%20", " ")
+        .replace(".", " ")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+    if (name.isBlank() || name.length < 3) return "image"
+    return name.take(120)
+}
+
+/**
+ * 为图片推导来源上下文: 在搜索结果 items 中寻找与图片 URL 相关的条目
+ * (URL 出现在该条目文本里, 或条目 URL 域名与图片同源),
+ * 返回该条目的标题+正文片段, 让 AI 直接了解图片对应的页面文本内容,
+ * 无需再调用 image_analysis/OCR 看图。
+ */
+private fun deriveImageContext(imageUrl: String, items: List<JsonObject>): String {
+    if (items.isEmpty()) return ""
+    val url = imageUrl.lowercase()
+    val host = runCatching { java.net.URI(url).host }.getOrNull() ?: ""
+    // 1) 精确匹配: 图片 URL 出现在某条目的 text 里
+    items.firstOrNull { item ->
+        item["text"]?.jsonPrimitive?.contentOrNull?.contains(url, ignoreCase = true) == true
+    }?.let { return itemContext(it) }
+    // 2) 同源匹配: 条目 URL 域名与图片域名相同
+    items.firstOrNull { item ->
+        val iu = item["url"]?.jsonPrimitive?.contentOrNull.orEmpty()
+        host.isNotBlank() && runCatching { java.net.URI(iu).host }.getOrNull() == host
+    }?.let { return itemContext(it) }
+    // 3) 兜底: 取第一条非空条目作为上下文
+    items.firstOrNull { item -> item["text"]?.jsonPrimitive?.contentOrNull?.isNotBlank() == true }
+        ?.let { return itemContext(it) }
+    return ""
+}
+
+private fun itemContext(item: JsonObject): String = buildString {
+    item["title"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }?.let { append("标题: $it\n") }
+    item["url"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }?.let { append("来源: $it\n") }
+    item["text"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }?.let { append("正文: $it") }
+}.trim().take(1500)
