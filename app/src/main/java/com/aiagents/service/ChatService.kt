@@ -788,6 +788,8 @@ class ChatService(
         add(buildStickerSearchTool(
             context = context,
             workspaceId = assistant.workspaceId?.toString(),
+            workspaceRepository = workspaceRepository,
+            proxyAddress = proxyManager.localProxyAddress,
         ))
         add(
             buildImageGenTool(

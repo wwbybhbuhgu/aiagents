@@ -24,11 +24,12 @@ class MemePathValidatorTransformer(
         ctx: TransformerContext,
         messages: List<UIMessage>,
     ): List<UIMessage> {
-        if (messages.none { msg -> msg.textOrEmpty().contains("/memes/") }) return messages
+        val textDump = messages.joinToString("\n") { it.textOrEmpty() }
+        if (!textDump.contains("/memes/") && !textDump.contains("workspacefile/")) return messages
 
         return messages.map { message ->
             val text = message.textOrEmpty()
-            if (!text.contains("/memes/")) return@map message
+            if (!text.contains("/memes/") && !text.contains("workspacefile/")) return@map message
 
             var newText = text
             // 匹配 ![alt](content://.../memes/...) 或 ![alt](/memes/...) 整段
@@ -62,6 +63,18 @@ class MemePathValidatorTransformer(
                     "(图片不存在, 请用 search_sticker 工具获取真实表情包)"
                 )
             }
+            // 校验 content://...workspacefile/... 图片引用(斗图下载图 / 工作区图片)是否真实可读
+            val contentUriRefs = Regex("content://[^\\s\"'<>()]+")
+            contentUriRefs.findAll(text).forEach { match ->
+                val uri = match.value
+                if (fullLink.findAll(text).any { it.value.contains(uri) && it.value.contains("/memes/") }) return@forEach
+                if (isReadableContentUri(uri)) return@forEach
+                Log.w(TAG, "Fake content:// image in reply, replacing: $uri")
+                newText = newText.replace(
+                    uri,
+                    "(图片不存在, 请用 search_sticker 工具获取真实表情包)"
+                )
+            }
             if (newText == text) {
                 message
             } else {
@@ -76,6 +89,15 @@ class MemePathValidatorTransformer(
         val file = File(context.filesDir, "${MemeAssetsInstaller.MEMES_DIR}/$relative")
         return file.isFile
     }
+
+    /** 通过 ContentProvider 尝试读取, 能读到说明是真实存在的文件 */
+    private fun isReadableContentUri(uri: String): Boolean = runCatching {
+        val parsed = android.net.Uri.parse(uri)
+        context.contentResolver.openInputStream(parsed)?.close() == true || run {
+            // 部分 provider 不支持 openInputStream, 退化为存在性检查
+            context.contentResolver.getType(parsed) != null
+        }
+    }.getOrDefault(false)
 
     private fun replaceTextPart(message: UIMessage, newText: String): UIMessage {
         val parts = message.parts.toMutableList()
