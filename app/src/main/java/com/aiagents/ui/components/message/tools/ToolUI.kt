@@ -203,8 +203,9 @@ internal fun toolDisplayName(toolName: String): String? = when (toolName) {
     "get_location" -> stringResource(R.string.tool_name_get_location)
     "phone_call" -> stringResource(R.string.tool_name_phone_call)
     "get_foreground_app" -> stringResource(R.string.tool_name_get_foreground_app)
-    "character_state_get" -> stringResource(R.string.tool_name_character_state_get)
-    "character_state_set" -> stringResource(R.string.tool_name_character_state_set)
+    "agent_state_get" -> stringResource(R.string.tool_name_agent_state_get)
+    "agent_state_set" -> stringResource(R.string.tool_name_agent_state_set)
+    "search_sticker" -> stringResource(R.string.tool_name_search_sticker)
     else -> null
 }
 
@@ -262,8 +263,9 @@ internal fun toolIcon(toolName: String): ImageVector = when (toolName) {
     "get_foreground_app" -> HugeIcons.SmartPhone01
     "get_screen_text" -> HugeIcons.Text
     "get_device_info" -> HugeIcons.SmartPhone01
-    "character_state_get" -> HugeIcons.Id
-    "character_state_set" -> HugeIcons.UserEdit01
+    "agent_state_get" -> HugeIcons.Id
+    "agent_state_set" -> HugeIcons.UserEdit01
+    "search_sticker" -> HugeIcons.Image01
     "browser_open" -> HugeIcons.Earth
     "browser_set_user_agent" -> HugeIcons.Browser
     "browser_info" -> HugeIcons.Browser

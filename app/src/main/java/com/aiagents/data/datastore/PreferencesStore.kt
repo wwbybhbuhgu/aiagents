@@ -147,6 +147,9 @@ class SettingsStore(
 
         // 赞助提醒
         val SPONSOR_ALERT_DISMISSED_AT = intPreferencesKey("sponsor_alert_dismissed_at")
+
+        // 代理
+        val PROXY_CONFIG = stringPreferencesKey("proxy_config")
     }
 
     private val dataStore = context.settingsStore
@@ -252,6 +255,9 @@ class SettingsStore(
                 } ?: BackupReminderConfig(),
                 launchCount = preferences[LAUNCH_COUNT] ?: 0,
                 sponsorAlertDismissedAt = preferences[SPONSOR_ALERT_DISMISSED_AT] ?: 0,
+                proxyConfig = preferences[PROXY_CONFIG]?.let {
+                    JsonInstant.decodeFromString(it)
+                } ?: ProxyConfig(),
             )
         }
         .map {
@@ -417,6 +423,7 @@ class SettingsStore(
             preferences[BACKUP_REMINDER_CONFIG] = JsonInstant.encodeToString(settings.backupReminderConfig)
             preferences[LAUNCH_COUNT] = settings.launchCount
             preferences[SPONSOR_ALERT_DISMISSED_AT] = settings.sponsorAlertDismissedAt
+            preferences[PROXY_CONFIG] = JsonInstant.encodeToString(settings.proxyConfig)
         }
     }
 
@@ -560,6 +567,8 @@ data class Settings(
     val sponsorAlertDismissedAt: Int = 0,
     /** 技能目录挂载到的 SD 目录（SAF tree URI），null = 内部存储 */
     val skillsSdUri: String? = null,
+    /** 代理配置（默认直连） */
+    val proxyConfig: ProxyConfig = ProxyConfig(),
 ) {
     companion object {
         // 构造一个用于初始化的settings, 但它不能用于保存，防止使用初始值存储
@@ -645,6 +654,33 @@ data class BackupReminderConfig(
     val enabled: Boolean = false,
     val intervalDays: Int = 7,
     val lastBackupTime: Long = 0L,
+)
+
+/**
+ * 代理配置。默认直连（enabled = false 时不启动内核、不注入任何代理环境变量）。
+ * 仅在用户开启并配置订阅/节点后，才启动 mihomo 内核走代理。
+ */
+@Serializable
+data class ProxyConfig(
+    /** 默认启用代理 */
+    val enabled: Boolean = true,
+    /** 本地 mixed-port（HTTP + SOCKS5），内核监听该端口 */
+    val port: Int = 7890,
+    /** 订阅地址（clash 订阅 URL），空 = 仅直连 */
+    val subscription: String = "",
+    /** 直连优先（未匹配规则或未选择节点时走直连） */
+    val directAsDefault: Boolean = true,
+    /** 直接粘贴的配置文件内容（优先级高于 subscription，非空时直接使用此配置） */
+    val configContent: String = "",
+    /** 代理模式：0=全部走代理, 1=仅工具, 2=仅LLM API, 3=仅工作区, 4=自定义 */
+    val proxyMode: Int = 0,
+    /** 自定义代理选项 */
+    val proxyTools: Boolean = true,
+    val proxyLlmApi: Boolean = true,
+    val proxyWorkspace: Boolean = true,
+    val proxySearch: Boolean = true,
+    /** 已选择的代理组和节点 {"组名": "节点名"} */
+    val selectedProxies: Map<String, String> = emptyMap(),
 )
 
 fun Settings.isNotConfigured() = providers.all { it.models.isEmpty() }

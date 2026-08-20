@@ -258,6 +258,12 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         headlineContent = { Text(stringResource(R.string.setting_page_web_server)) },
                     )
                     item(
+                        onClick = { navController.navigate(Screen.SettingProxy) },
+                        leadingContent = { Icon(HugeIcons.SmartPhone01, null) },
+                        supportingContent = { Text("代理节点与流量统计") },
+                        headlineContent = { Text("代理") },
+                    )
+                    item(
                         onClick = { navController.navigate(Screen.SettingAutomation) },
                         leadingContent = { Icon(HugeIcons.SmartPhone01, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_automation_desc)) },

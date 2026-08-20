@@ -1532,8 +1532,8 @@
   <string name="setting_automation_guide">Install Shizuku from shizuku.rikka.app (or via ADB) to enable screenshots. Without it, screen taps and text reading still work.</string>
   <string name="tool_name_send_notification">Send notification</string>
   <string name="tool_name_get_foreground_app">Foreground app</string>
-  <string name="tool_name_character_state_get">Character state</string>
-  <string name="tool_name_character_state_set">Update character state</string>
+  <string name="tool_name_agent_state_get">Get agent state</string>
+  <string name="tool_name_agent_state_set">Update agent state</string>
   <string name="setting_page_built_in_tools_send_notification">Send notification</string>
   <string name="setting_page_built_in_tools_send_notification_desc">Send a notification to the device notification bar</string>
   <string name="screen_reader_permission_title">Enable floating window</string>
@@ -1542,5 +1542,5 @@
   <string name="browser_overlay_notification_title">AI Browser</string>
   <string name="browser_overlay_notification_desc">AI browser automation floating window</string>
   <string name="browser_overlay_stop">Close</string>
+  <string name="tool_name_search_sticker">Search sticker</string>
 </resources>
-  

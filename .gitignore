@@ -11,11 +11,10 @@ local.properties
 .cursor
 .history
 .kotlin
-# 本地语音/模型资产 (超过 GitHub 100MB 限制, 不推送)
-/app/src/main/assets/sherpa/
-/app/src/main/assets/tts_models/
-/speech/libs/
-/app/src/main/jniLibs/arm64-v8a/libncnn.so
-/app/src/main/jniLibs/arm64-v8a/libsherpa-ncnn-jni.so
 .agents/
 .claude/
+# 编译产物与本地构建中间文件 (不需要推送)
+/clashcore/build/
+/app/build/
+/build/
+/.gradle/

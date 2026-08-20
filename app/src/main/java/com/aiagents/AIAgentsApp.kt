@@ -18,6 +18,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import com.aiagents.data.files.FileFolders
+import com.aiagents.data.memes.MemeAssetsInstaller
 import java.io.File
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -87,6 +88,9 @@ class AIAgentsApp : Application() {
         // 技能目录 SD 挂载: 启动时从 SD 拉取缺失技能
         runCatching { get<SkillManager>().syncSkillsFromSd() }
 
+        // 安装内置表情包图库到 filesDir/memes (bind mount 到工作区 /memes)
+        runCatching { MemeAssetsInstaller.ensureInstalled(this) }
+
         // set cursor window size to 32MB
         DatabaseUtil.setCursorWindowSize(32 * 1024 * 1024)
 
@@ -116,6 +120,9 @@ class AIAgentsApp : Application() {
 
         // Start WebServer if enabled in settings
         startWebServerIfEnabled()
+
+        // 自动启动代理（如果配置中启用了代理）
+        startProxyIfEnabled()
 
         // Increment launch count
         incrementLaunchCount()
@@ -149,6 +156,9 @@ class AIAgentsApp : Application() {
                         WorkspaceFileFetcher.Factory(
                             workspaceRepository = workspaceRepository,
                         )
+                    )
+                    add(
+                        com.aiagents.ui.media.MemesPathFetcher.Factory(this@AIAgentsApp)
                     )
                 }
                 .build()
@@ -252,6 +262,24 @@ class AIAgentsApp : Application() {
                 }
             }.onFailure {
                 Log.e(TAG, "startWebServerIfEnabled failed", it)
+            }
+        }
+    }
+
+    private fun startProxyIfEnabled() {
+        get<AppScope>().launch {
+            runCatching {
+                delay(1000) // 延迟启动，等待 Koin 初始化完成
+                val settings = get<SettingsStore>().settingsFlowRaw.first()
+                val proxyConfig = settings.proxyConfig
+                if (proxyConfig.enabled) {
+                    Log.i(TAG, "startProxyIfEnabled: starting proxy with port ${proxyConfig.port}")
+                    val proxyManager = get<com.aiagents.data.proxy.ProxyManager>()
+                    val started = proxyManager.start(proxyConfig)
+                    Log.i(TAG, "startProxyIfEnabled: proxy started = $started")
+                }
+            }.onFailure {
+                Log.e(TAG, "startProxyIfEnabled failed", it)
             }
         }
     }

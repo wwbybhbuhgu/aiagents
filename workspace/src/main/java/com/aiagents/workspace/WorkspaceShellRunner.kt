@@ -22,11 +22,16 @@ data class WorkspaceShellContext(
     val bindMounts: List<WorkspaceBindMount> = emptyList(),
 )
 
-class HostShellRunner : WorkspaceShellRunner {
+class HostShellRunner(
+    private val proxyEnv: () -> Map<String, String> = { emptyMap() },
+) : WorkspaceShellRunner {
     override fun execute(context: WorkspaceShellContext): WorkspaceCommandResult {
         val process = ProcessBuilder(defaultShell(), "-c", context.command)
             .directory(context.workingDir)
             .redirectErrorStream(false)
+            .apply {
+                proxyEnv().forEach { (k, v) -> environment()[k] = v }
+            }
             .start()
         return process.readResult(context.timeoutMillis, context.stdin)
     }

@@ -187,7 +187,12 @@ class PersistentContainerSession(
         /**
          * 从一次性 proot 上下文构建常驻会话：命令换成 bash 命令循环。
          */
-        fun from(context: WorkspaceShellContext, nativeLibraryDir: File, patcher: RootfsPatcher): PersistentContainerSession {
+        fun from(
+            context: WorkspaceShellContext,
+            nativeLibraryDir: File,
+            patcher: RootfsPatcher,
+            proxyEnv: () -> Map<String, String> = { emptyMap() },
+        ): PersistentContainerSession {
             context.tempDir.mkdirs()
             patcher.patch(context.linuxDir)
             val proot = File(nativeLibraryDir, "libproot_exec.so")
@@ -224,6 +229,14 @@ class PersistentContainerSession(
                 "TERM=xterm-256color",
                 "LANG=C.UTF-8",
                 "LC_ALL=C.UTF-8",
+            )
+            proxyEnv().forEach { (k, v) ->
+                // 环境变量值不能含空格, 否则 proot 的 env 参数解析会出错; 简单过滤掉含空格的
+                if (!k.contains(' ') && !v.contains(' ')) {
+                    args += "$k=$v"
+                }
+            }
+            args += listOf(
                 "/bin/bash",
                 "-l",
                 "-c",
@@ -253,10 +266,11 @@ class PersistentContainerSession(
 class PersistentShellRunner(
     private val nativeLibraryDir: File,
     private val patcher: RootfsPatcher = RootfsPatcher(),
+    private val proxyEnv: () -> Map<String, String> = { emptyMap() },
 ) : WorkspaceShellRunner {
 
     private val sessions = ConcurrentHashMap<String, PersistentContainerSession>()
-    private val oneShot = ProotShellRunner(nativeLibraryDir, patcher)
+    private val oneShot = ProotShellRunner(nativeLibraryDir, patcher, proxyEnv)
 
     override fun execute(context: WorkspaceShellContext): WorkspaceCommandResult {
         if (!context.linuxDir.hasUsableRootfs()) {
@@ -267,7 +281,7 @@ class PersistentShellRunner(
             return oneShot.execute(context)
         }
         val session = sessions.getOrPut(context.root) {
-            PersistentContainerSession.from(context, nativeLibraryDir, patcher)
+            PersistentContainerSession.from(context, nativeLibraryDir, patcher, proxyEnv)
         }
         if (!session.isAlive) {
             // 常驻进程没了（如被杀/崩溃), 重启会话

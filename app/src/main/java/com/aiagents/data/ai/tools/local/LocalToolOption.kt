@@ -78,8 +78,8 @@ sealed class LocalToolOption {
     data object Keyboard : LocalToolOption()
 
     @Serializable
-    @SerialName("character_state")
-    data object CharacterState : LocalToolOption()
+    @SerialName("agent_state")
+    data object AgentState : LocalToolOption()
 
     @Serializable
     @SerialName("foreground_app")
@@ -100,7 +100,7 @@ sealed class LocalToolOption {
             Calendar,
             Automation,
             LocalSpeechRecognition,
-            CharacterState,
+            AgentState,
             ForegroundApp,
         )
     }

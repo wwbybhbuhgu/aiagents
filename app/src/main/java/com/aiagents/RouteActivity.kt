@@ -126,6 +126,7 @@ import com.aiagents.ui.pages.setting.SettingSearchPage
 import com.aiagents.ui.pages.setting.SettingScheduledTasksPage
 import com.aiagents.ui.pages.setting.SettingSpeechPage
 import com.aiagents.ui.pages.setting.SettingWebPage
+import com.aiagents.ui.pages.setting.SettingProxyPage
 import com.aiagents.ui.pages.share.handler.ShareHandlerPage
 import com.aiagents.ui.pages.stats.StatsPage
 import com.aiagents.ui.pages.webview.WebViewPage
@@ -635,6 +636,10 @@ class RouteActivity : ComponentActivity() {
                                 SettingWebPage()
                             }
 
+                            entry<Screen.SettingProxy> {
+                                SettingProxyPage()
+                            }
+
                             entry<Screen.Debug> {
                                 DebugPage()
                             }
@@ -870,6 +875,9 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingWeb : Screen
+
+    @Serializable
+    data object SettingProxy : Screen
 
     @Serializable
     data object Debug : Screen

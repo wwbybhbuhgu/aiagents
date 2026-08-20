@@ -31,6 +31,7 @@ import com.aiagents.data.db.migrations.Migration_13_14
 import com.aiagents.data.db.migrations.Migration_14_15
 import com.aiagents.data.db.migrations.Migration_15_16
 import com.aiagents.data.ai.mcp.McpManager
+import com.aiagents.data.proxy.ProxyManager
 import com.aiagents.data.sync.webdav.WebDavSync
 import com.aiagents.search.SearchService
 import com.aiagents.data.sync.S3Sync
@@ -40,8 +41,13 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 val dataSourceModule = module {
     single {
@@ -170,15 +176,28 @@ val dataSourceModule = module {
     }
 
     single<OkHttpClient> {
+        val proxyManager = get<ProxyManager>()
         val acceptLang = AcceptLanguageBuilder.fromAndroid(get())
             .build()
-        OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(10, TimeUnit.MINUTES)
             .writeTimeout(120, TimeUnit.SECONDS)
             .followSslRedirects(true)
             .followRedirects(true)
             .retryOnConnectionFailure(true)
+
+        // SSL 宽容：信任所有证书（用于代理场景）
+        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+            override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+            override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+        })
+        val sslContext = SSLContext.getInstance("TLS")
+        sslContext.init(null, trustAllCerts, SecureRandom())
+        builder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+        builder.hostnameVerifier { _, _ -> true }
+
             .addInterceptor { chain ->
                 val originalRequest = chain.request()
                 val requestBuilder = originalRequest.newBuilder()
@@ -212,7 +231,19 @@ val dataSourceModule = module {
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.HEADERS
             })
-            .build().also { SearchService.init(it, get()) }
+
+        // 配置代理（静态，启动时确定）
+        val proxyAddress = proxyManager.localProxyAddress
+        if (proxyAddress != null) {
+            val parts = proxyAddress.split(":")
+            if (parts.size == 2) {
+                val host = parts[0]
+                val port = parts[1].toIntOrNull() ?: 7890
+                builder.proxy(java.net.Proxy(java.net.Proxy.Type.HTTP, java.net.InetSocketAddress(host, port)))
+            }
+        }
+
+        builder.build().also { SearchService.init(proxyManager.createOkHttpClient(), get()) }
     }
 
     single {
@@ -233,6 +264,7 @@ val dataSourceModule = module {
     }
 
     single<HttpClient> {
+        val proxyManager = get<ProxyManager>()
         HttpClient(OkHttp) {
             engine {
                 config {
@@ -242,6 +274,28 @@ val dataSourceModule = module {
                     followSslRedirects(true)
                     followRedirects(true)
                     retryOnConnectionFailure(true)
+
+                    // SSL 宽容：信任所有证书
+                    val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+                        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+                        override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+                    })
+                    val sslContext = SSLContext.getInstance("TLS")
+                    sslContext.init(null, trustAllCerts, SecureRandom())
+                    sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+                    hostnameVerifier { _, _ -> true }
+
+                    // 配置代理
+                    val proxyAddress = proxyManager.localProxyAddress
+                    if (proxyAddress != null) {
+                        val parts = proxyAddress.split(":")
+                        if (parts.size == 2) {
+                            val host = parts[0]
+                            val port = parts[1].toIntOrNull() ?: 7890
+                            proxy(java.net.Proxy(java.net.Proxy.Type.HTTP, java.net.InetSocketAddress(host, port)))
+                        }
+                    }
                 }
             }
         }

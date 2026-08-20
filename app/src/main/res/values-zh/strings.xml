@@ -1518,8 +1518,8 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="tool_name_send_notification">发送通知</string>
   <string name="tool_name_local_speech_recognition">本地语音识别</string>
   <string name="tool_name_get_foreground_app">前台应用</string>
-  <string name="tool_name_character_state_get">角色状态</string>
-  <string name="tool_name_character_state_set">更新角色状态</string>
+  <string name="tool_name_agent_state_get">获取Agent状态</string>
+  <string name="tool_name_agent_state_set">更新Agent状态</string>
   <string name="setting_page_built_in_tools_send_notification">发送通知</string>
   <string name="setting_page_built_in_tools_send_notification_desc">向设备通知栏发送一条通知</string>
   <string name="screen_reader_permission_title">开启悬浮窗权限</string>
@@ -1528,5 +1528,5 @@ mDNS 地址：使用 .local 主机名，同一网络中的其他设备可通过�
   <string name="browser_overlay_notification_title">AI 浏览器</string>
   <string name="browser_overlay_notification_desc">AI 浏览器自动化悬浮窗</string>
   <string name="browser_overlay_stop">关闭</string>
+  <string name="tool_name_search_sticker">搜索表情包</string>
 </resources>
-  

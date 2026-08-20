@@ -14,6 +14,7 @@ data class WorkspaceBindMount(
 class ProotShellRunner(
     private val nativeLibraryDir: File,
     private val patcher: RootfsPatcher = RootfsPatcher(),
+    private val proxyEnv: () -> Map<String, String> = { emptyMap() },
 ) : WorkspaceShellRunner {
     override fun execute(context: WorkspaceShellContext): WorkspaceCommandResult {
         if (!context.linuxDir.hasUsableRootfs()) {
@@ -50,6 +51,7 @@ class ProotShellRunner(
                 environment()["PROOT_LOADER"] = loader.absolutePath
                 environment()["PROOT_TMP_DIR"] = context.tempDir.absolutePath
                 environment()["TMPDIR"] = context.tempDir.absolutePath
+                proxyEnv().forEach { (k, v) -> environment()[k] = v }
             }
             .start()
 
@@ -95,6 +97,14 @@ class ProotShellRunner(
             "TERM=xterm-256color",
             "LANG=C.UTF-8",
             "LC_ALL=C.UTF-8",
+        )
+        // 注入代理环境变量（值不能含空格，否则 proot 的 env 参数解析会出错）
+        proxyEnv().forEach { (k, v) ->
+            if (!k.contains(' ') && !v.contains(' ')) {
+                command += "$k=$v"
+            }
+        }
+        command += listOf(
             "/bin/bash",
             "-l",
             "-c",

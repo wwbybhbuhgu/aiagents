@@ -57,6 +57,7 @@ import com.aiagents.data.ai.tools.createSkillTools
 import com.aiagents.data.ai.tools.createWorkspaceTools
 import com.aiagents.data.ai.tools.buildTodoTools
 import com.aiagents.data.ai.tools.buildWebFetchTool
+import com.aiagents.data.ai.tools.buildStickerSearchTool
 import com.aiagents.data.ai.tools.buildReminderTools
 import com.aiagents.data.ai.tools.AgentRun
 import com.aiagents.data.ai.tools.AgentRunManager
@@ -86,6 +87,8 @@ import com.aiagents.data.ai.transformers.TimeReminderTransformer
 import com.aiagents.data.ai.transformers.ToolScenarioGuideTransformer
 import com.aiagents.data.ai.transformers.UserPriorityTransformer
 import com.aiagents.data.ai.transformers.WorkspaceReminderTransformer
+import com.aiagents.data.ai.transformers.ProxyInjectionTransformer
+import com.aiagents.data.ai.transformers.MemePathValidatorTransformer
 import com.aiagents.data.event.AppEvent
 import com.aiagents.data.event.AppEventBus
 import com.aiagents.data.datastore.SettingsStore
@@ -176,6 +179,7 @@ class ChatService(
     private val workspaceRepository: WorkspaceRepository,
     private val folderRepository: FolderRepository,
     private val agentRunManager: AgentRunManager,
+    private val proxyManager: com.aiagents.data.proxy.ProxyManager,
 ) {
     // workspace 系统提示注入 (依赖 workspaceRepository, 故在类内构造)
     private val workspaceReminderTransformer = WorkspaceReminderTransformer(workspaceRepository)
@@ -183,6 +187,10 @@ class ChatService(
     private val toolScenarioGuideTransformer = ToolScenarioGuideTransformer()
     // 用户最高优先级注入 (用户设置"最重要的事情", 注入主 Agent 与子 Agent 的系统提示)
     private val userPriorityTransformer = UserPriorityTransformer()
+    // 代理环境变量注入 (代理开启时注入 HTTP_PROXY 等信息到系统提示词)
+    private val proxyInjectionTransformer = ProxyInjectionTransformer
+    // 表情包/内联图片 /memes/ 路径真实性校验 (拦截模型幻觉出的假图路径)
+    private val memeLinkValidatorTransformer = MemePathValidatorTransformer(context)
 
     // 常驻容器服务启动标志（首次有就绪工作区时启动一次）
     private var containerServiceStarted = false
@@ -625,8 +633,12 @@ class ChatService(
                     add(toolScenarioGuideTransformer)
                     add(workspaceReminderTransformer)
                     add(userPriorityTransformer)
+                    add(proxyInjectionTransformer)
                 },
-                outputTransformers = outputTransformers,
+                outputTransformers = buildList {
+                    addAll(outputTransformers)
+                    add(memeLinkValidatorTransformer)
+                },
                 tools = tools,
             ).onCompletion {
                 // 可能被取消了，或者意外结束，兜底更新并落盘，
@@ -752,6 +764,7 @@ class ChatService(
                     settings = settings,
                     workspaceId = assistant.workspaceId?.toString(),
                     workspaceRepository = workspaceRepository,
+                    proxyAddress = proxyManager.localProxyAddress,
                 ) { params, content -> compressPageContent(params, content) }
             )
         }
@@ -762,13 +775,20 @@ class ChatService(
         } else {
             LocalToolOption.all - LocalToolOption.Automation
         }
-        addAll(localTools.getTools(localToolOptions))
+        addAll(localTools.getTools(localToolOptions, assistant.id.toString()))
         // 浏览器自动化由 AI 发起: 仅当开启 enableBrowserAutomation 时注入整套 browser_* 工具
         if (assistant.enableBrowserAutomation) {
             addAll(localTools.browserTools)
         }
         addAll(buildTodoTools(conversationId.toString()))
-        add(buildWebFetchTool { params, content -> compressPageContent(params, content) })
+        add(buildWebFetchTool(
+            proxyManager = proxyManager,
+            compress = { params, content -> compressPageContent(params, content) }
+        ))
+        add(buildStickerSearchTool(
+            context = context,
+            workspaceId = assistant.workspaceId?.toString(),
+        ))
         add(
             buildImageGenTool(
                 context = context,
@@ -925,7 +945,7 @@ class ChatService(
                     assistant = assistant,
                     tools = subAgentTools,
                     workspaceCwd = conversation.workspaceCwd,
-                    inputTransformers = listOf(toolScenarioGuideTransformer, userPriorityTransformer),
+                    inputTransformers = listOf(toolScenarioGuideTransformer, userPriorityTransformer, proxyInjectionTransformer),
                 ).collect { chunk ->
                     when (chunk) {
                         is GenerationChunk.Messages -> {
@@ -969,7 +989,7 @@ class ChatService(
             assistant = assistant,
             tools = subAgentTools,
             workspaceCwd = conversation.workspaceCwd,
-            inputTransformers = listOf(toolScenarioGuideTransformer, userPriorityTransformer),
+            inputTransformers = listOf(toolScenarioGuideTransformer, userPriorityTransformer, proxyInjectionTransformer),
         ).collect { chunk ->
             when (chunk) {
                 is GenerationChunk.Messages -> {

@@ -36,6 +36,7 @@ fun createSearchTools(
     settings: Settings,
     workspaceId: String? = null,
     workspaceRepository: WorkspaceRepository? = null,
+    proxyAddress: String? = null,
     compress: suspend (toolParams: JsonObject, content: String) -> String = { _, content -> content },
 ): Set<Tool> {
     // 用户已配置的搜索引擎列表: AI 只能从中选择
@@ -129,7 +130,7 @@ fun createSearchTools(
                                     item.jsonObject.takeIf { it.isNotEmpty() }
                                 } ?: emptyList()
                                 map["downloaded_images"] = JsonArray(
-                                    downloadSearchImages(context, workspaceId, workspaceRepository, imageUrls, items)
+                                    downloadSearchImages(context, workspaceId, workspaceRepository, imageUrls, items, proxyAddress)
                                 )
                             }
                             JsonObject(map)
@@ -200,13 +201,25 @@ private suspend fun downloadSearchImages(
     workspaceRepository: WorkspaceRepository?,
     imageUrls: List<String>,
     searchItems: List<JsonObject> = emptyList(),
+    proxyAddress: String? = null,
 ): List<JsonObject> {
-    val client = OkHttpClient.Builder()
+    val builder = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .callTimeout(45, TimeUnit.SECONDS)
         .followRedirects(true)
-        .build()
+
+    // 配置代理
+    if (proxyAddress != null) {
+        val parts = proxyAddress.split(":")
+        if (parts.size == 2) {
+            val host = parts[0]
+            val port = parts[1].toIntOrNull() ?: 7890
+            builder.proxy(java.net.Proxy(java.net.Proxy.Type.HTTP, java.net.InetSocketAddress(host, port)))
+        }
+    }
+
+    val client = builder.build()
     val fallbackDir = File(context.filesDir, FileFolders.TOOL_OUTPUTS).apply { mkdirs() }
     val timestamp = System.currentTimeMillis()
     val results = mutableListOf<JsonObject>()

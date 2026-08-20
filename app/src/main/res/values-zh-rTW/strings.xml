@@ -1402,8 +1402,8 @@
   <string name="tool_name_send_notification">傳送通知</string>
   <string name="tool_name_local_speech_recognition">本地語音識別</string>
   <string name="tool_name_get_foreground_app">前景應用</string>
-  <string name="tool_name_character_state_get">角色狀態</string>
-  <string name="tool_name_character_state_set">更新角色狀態</string>
+  <string name="tool_name_agent_state_get">獲取Agent狀態</string>
+  <string name="tool_name_agent_state_set">更新Agent狀態</string>
   <string name="tool_name_app_launch">開啟應用</string>
   <string name="tool_name_app_list">應用列表</string>
   <string name="tool_name_auto_back">返回</string>
@@ -1449,5 +1449,5 @@
   <string name="browser_overlay_notification_title">AI 瀏覽器</string>
   <string name="browser_overlay_notification_desc">AI 瀏覽器自動化懸浮窗</string>
   <string name="browser_overlay_stop">關閉</string>
+  <string name="tool_name_search_sticker">搜尋貼圖</string>
 </resources>
-  

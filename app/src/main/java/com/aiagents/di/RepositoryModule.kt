@@ -59,6 +59,14 @@ val repositoryModule = module {
         val context: Context = get()
         PersistentShellRunner(
             nativeLibraryDir = File(context.applicationInfo.nativeLibraryDir),
+            proxyEnv = { get<com.aiagents.data.proxy.ProxyManager>().proxyEnv() },
+        )
+    }
+
+    single {
+        val context: Context = get()
+        com.aiagents.data.proxy.ProxyManager(
+            filesDir = File(context.filesDir, "proxy"),
         )
     }
 
@@ -110,6 +118,12 @@ val repositoryModule = module {
                     source = File(Environment.getExternalStorageDirectory(), "$AI_AGENT_SHARED_DIR/${FileFolders.SD_DIR}")
                         .makeWorldReadableDir(),
                     target = com.aiagents.workspace.WorkspaceManager.ROOTFS_SD_DIR,
+                ),
+                // 内置表情包图库: filesDir/memes 全局共享, 每个工作区容器内可见为 /memes
+                WorkspaceBindMount(
+                    source = File(context.filesDir, com.aiagents.data.memes.MemeAssetsInstaller.MEMES_DIR)
+                        .makeWorldReadableDir(),
+                    target = "/memes",
                 ),
             ),
         )

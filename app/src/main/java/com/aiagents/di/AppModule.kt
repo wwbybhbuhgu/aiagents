@@ -116,7 +116,8 @@ val appModule = module {
             skillManager = get(),
             workspaceRepository = get(),
             folderRepository = get(),
-            agentRunManager = get()
+            agentRunManager = get(),
+            proxyManager = get(),
         )
     }
 

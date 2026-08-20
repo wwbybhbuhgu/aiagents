@@ -34,6 +34,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "aiagents"
 include(":app")
+include(":clashcore")
 include(":highlight")
 include(":ai")
 include(":search")

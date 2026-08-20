@@ -100,7 +100,7 @@ class LocalTools(
 
     val phoneCallTool by lazy { buildPhoneCallTool(context, eventBus) }
 
-    fun getTools(options: List<LocalToolOption>): List<Tool> {
+    fun getTools(options: List<LocalToolOption>, assistantId: String? = null): List<Tool> {
         val tools = mutableListOf<Tool>()
         if (options.contains(LocalToolOption.JavascriptEngine)) {
             tools.add(javascriptTool)
@@ -171,8 +171,8 @@ class LocalTools(
         if (options.contains(LocalToolOption.LocalSpeechRecognition)) {
             tools.add(buildLocalSpeechRecognitionTool(context, pathResolver, workspaceRepository))
         }
-        if (options.contains(LocalToolOption.CharacterState)) {
-            tools.addAll(buildCharacterStateTools(context))
+        if (options.contains(LocalToolOption.AgentState)) {
+            tools.addAll(buildAgentStateTools(context, assistantId))
         }
         if (options.contains(LocalToolOption.ForegroundApp)) {
             tools.add(buildForegroundAppTool(context, eventBus))
