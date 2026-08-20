@@ -106,6 +106,12 @@ class ScreenReaderOverlayService : Service(), LifecycleOwner, ViewModelStoreOwne
                 return START_NOT_STICKY
             }
         }
+        // Android 可能在 stopSelf 之后仍复用同一实例再次调用 onStartCommand
+        // (START_STICKY 重启 / 重复 startService), 此时 lifecycle 已到 DESTROYED,
+        // 直接置 RESUMED 会抛 IllegalStateException, 需先回到 CREATED 重建。
+        if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
+            lifecycleRegistry.currentState = Lifecycle.State.CREATED
+        }
         startForegroundCompat()
         lifecycleRegistry.currentState = Lifecycle.State.RESUMED
         showOverlay()
