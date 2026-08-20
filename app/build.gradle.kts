@@ -22,8 +22,8 @@ android {
         applicationId = "com.aiagents"
         minSdk = 26
         targetSdk = 37
-        versionCode = 173
-        versionName = "2.4.6"
+        versionCode = 174
+        versionName = "2.4.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
