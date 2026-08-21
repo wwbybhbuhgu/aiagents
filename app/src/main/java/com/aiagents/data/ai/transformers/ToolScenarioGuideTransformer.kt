@@ -40,6 +40,7 @@ private fun buildScenarioGuide(ctx: TransformerContext): String = buildString {
     appendLine("- 到点提醒/闹钟 → `reminder_create`; 定时或周期任务 → `cron_create`(相关: `reminder_list` / `cron_list`)")
     appendLine("- 联网搜索/打开网页内容 → `search_web` / `scrape_web` / `web_fetch`")
     appendLine("- 读写文件、执行命令、搭建环境 → workspace 工具(`workspace_shell` / `workspace_read_file` / `workspace_write_file` 等)")
+    appendLine("- SD卡文件无需导入: /storage/emulated/0/AI-Agent/sd/ 目录下的文件已挂载到工作区, 可直接用路径 /sd/文件名 访问(如 /sd/永恒与星辰与日常.apk), 不要调用导入工具")
     appendLine("- 生成图片 → `image_generate`; 分析图片/截图 → 优先本地 `cv_image`, 云端 `image_analysis` 兜底(见下方优先级)")
     appendLine("- 生成文件给用户下载/分享 → `file_share`")
     appendLine("- 加载技能指令 → `use_skill`; 查询历史对话 → `conversation_search` / `recent_chats`")
