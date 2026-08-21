@@ -657,6 +657,8 @@
   <string name="search_ability_scrape">Scrape</string>
   <string name="search_ability_search">Search</string>
   <string name="search_detail_api_key">API Key</string>
+  <string name="search_detail_label">Label</string>
+  <string name="search_detail_label_placeholder">Custom name to distinguish this service</string>
   <string name="search_detail_api_url">API URL</string>
   <string name="search_detail_custom_search_placeholder">My Custom Search</string>
   <string name="search_detail_custom_url">Custom URL</string>

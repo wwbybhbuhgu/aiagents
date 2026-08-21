@@ -132,9 +132,10 @@ data class ScrapedResultMetadata(
 @Serializable
 sealed class SearchServiceOptions {
     abstract val id: Uuid
+    abstract val label: String
 
     open val displayName: String
-        get() = TYPES[this::class] ?: "Unknown"
+        get() = label.ifBlank { TYPES[this::class] ?: "Unknown" }
 
     companion object {
         val DEFAULT = BingLocalOptions()
@@ -164,13 +165,15 @@ sealed class SearchServiceOptions {
     @Serializable
     @SerialName("bing_local")
     class BingLocalOptions(
-        override val id: Uuid = Uuid.random()
+        override val id: Uuid = Uuid.random(),
+        override val label: String = "",
     ) : SearchServiceOptions()
 
     @Serializable
     @SerialName("zhipu")
     data class ZhipuOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
     ) : SearchServiceOptions()
 
@@ -178,6 +181,7 @@ sealed class SearchServiceOptions {
     @SerialName("tavily")
     data class TavilyOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
         val depth: String = "advanced",
     ) : SearchServiceOptions()
@@ -186,6 +190,7 @@ sealed class SearchServiceOptions {
     @SerialName("exa")
     data class ExaOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
     ) : SearchServiceOptions()
 
@@ -193,6 +198,7 @@ sealed class SearchServiceOptions {
     @SerialName("searxng")
     data class SearXNGOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val url: String = "",
         val engines: String = "",
         val language: String = "",
@@ -204,6 +210,7 @@ sealed class SearchServiceOptions {
     @SerialName("linkup")
     data class LinkUpOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
         val depth: String = "standard",
     ) : SearchServiceOptions()
@@ -212,6 +219,7 @@ sealed class SearchServiceOptions {
     @SerialName("brave")
     data class BraveOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
     ) : SearchServiceOptions()
 
@@ -219,6 +227,7 @@ sealed class SearchServiceOptions {
     @SerialName("metaso")
     data class MetasoOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
     ) : SearchServiceOptions()
 
@@ -226,6 +235,7 @@ sealed class SearchServiceOptions {
     @SerialName("ollama")
     data class OllamaOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
     ) : SearchServiceOptions()
 
@@ -233,6 +243,7 @@ sealed class SearchServiceOptions {
     @SerialName("perplexity")
     data class PerplexityOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
         val maxTokens: Int? = null,
         val maxTokensPerPage: Int? = null,
@@ -242,6 +253,7 @@ sealed class SearchServiceOptions {
     @SerialName("firecrawl")
     data class FirecrawlOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
     ) : SearchServiceOptions()
 
@@ -249,6 +261,7 @@ sealed class SearchServiceOptions {
     @SerialName("jina")
     data class JinaOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
         val searchUrl: String = "https://s.jina.ai/",
         val scrapeUrl: String = "https://r.jina.ai/",
@@ -258,6 +271,7 @@ sealed class SearchServiceOptions {
     @SerialName("bocha")
     data class BochaOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
         val summary: Boolean = true,
     ) : SearchServiceOptions()
@@ -266,6 +280,7 @@ sealed class SearchServiceOptions {
     @SerialName("aiagents")
     data class AIAgentsOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
         val depth: String = "standard",
     ) : SearchServiceOptions()
@@ -274,6 +289,7 @@ sealed class SearchServiceOptions {
     @SerialName("grok")
     data class GrokOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
         val model: String = "grok-4-1-fast-non-reasoning",
         val customUrl: String = "https://api.x.ai/v1/responses",
@@ -284,6 +300,7 @@ sealed class SearchServiceOptions {
     @SerialName("tinyfish")
     data class TinyfishOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
     ) : SearchServiceOptions()
 
@@ -291,6 +308,7 @@ sealed class SearchServiceOptions {
     @SerialName("serper")
     data class SerperOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val apiKey: String = "",
     ) : SearchServiceOptions()
 
@@ -298,12 +316,13 @@ sealed class SearchServiceOptions {
     @SerialName("custom_js")
     data class CustomJsOptions(
         override val id: Uuid = Uuid.random(),
+        override val label: String = "",
         val name: String = "",
         val searchScript: String = DEFAULT_SEARCH_SCRIPT,
         val scrapeScript: String = "",
     ) : SearchServiceOptions() {
         override val displayName: String
-            get() = name.ifBlank { "Custom JS" }
+            get() = label.ifBlank { name.ifBlank { "Custom JS" } }
         companion object {
             const val DEFAULT_SCRAPE_SCRIPT = """// Implement scrape(urls) function
 // urls is an array of URL strings

@@ -600,6 +600,8 @@
   <string name="search_ability_scrape">爬取</string>
   <string name="search_ability_search">搜尋</string>
   <string name="search_detail_api_key">API 金鑰</string>
+  <string name="search_detail_label">標籤</string>
+  <string name="search_detail_label_placeholder">自訂名稱以區分同類型服務</string>
   <string name="search_detail_api_url">API URL</string>
   <string name="search_detail_custom_search_placeholder">我的自訂搜尋</string>
   <string name="search_detail_custom_url">自訂網址</string>

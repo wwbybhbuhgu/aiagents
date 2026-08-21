@@ -169,6 +169,22 @@ private fun SearchServiceOptionsEditor(
     options: SearchServiceOptions,
     onUpdateOptions: (SearchServiceOptions) -> Unit
 ) {
+    // Common label editor for all service types
+    FormItem(
+        label = {
+            Text(stringResource(R.string.search_detail_label))
+        }
+    ) {
+        OutlinedTextField(
+            value = options.label,
+            onValueChange = { newLabel ->
+                onUpdateOptions(updateLabel(options, newLabel))
+            },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(stringResource(R.string.search_detail_label_placeholder)) },
+        )
+    }
+
     when (options) {
         is SearchServiceOptions.TavilyOptions -> {
             TavilyOptions(options) { onUpdateOptions(it) }
@@ -223,6 +239,27 @@ private fun SearchServiceOptionsEditor(
             CustomJsOptions(options) { onUpdateOptions(it) }
         }
     }
+}
+
+private fun updateLabel(options: SearchServiceOptions, newLabel: String): SearchServiceOptions = when (options) {
+    is SearchServiceOptions.TavilyOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.ExaOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.ZhipuOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.SearXNGOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.LinkUpOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.BraveOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.MetasoOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.OllamaOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.PerplexityOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.FirecrawlOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.JinaOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.BochaOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.AIAgentsOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.GrokOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.TinyfishOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.SerperOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.CustomJsOptions -> options.copy(label = newLabel)
+    is SearchServiceOptions.BingLocalOptions -> SearchServiceOptions.BingLocalOptions(id = options.id, label = newLabel)
 }
 
 @Composable

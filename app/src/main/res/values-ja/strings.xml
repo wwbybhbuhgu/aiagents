@@ -597,6 +597,8 @@
   <string name="search_ability_scrape">スクレイピング</string>
   <string name="search_ability_search">検索</string>
   <string name="search_detail_api_key">APIキー</string>
+  <string name="search_detail_label">ラベル</string>
+  <string name="search_detail_label_placeholder">同タイプのサービスを区別する名前</string>
   <string name="search_detail_api_url">API URL</string>
   <string name="search_detail_custom_search_placeholder">マイカスタム検索</string>
   <string name="search_detail_custom_url">カスタムURL</string>
