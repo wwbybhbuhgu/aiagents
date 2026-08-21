@@ -22,10 +22,11 @@ import kotlin.coroutines.suspendCoroutine
 internal fun buildGeolocationTool(context: Context): Tool = Tool(
     name = "get_geolocation",
     description = """
-        Get the device's GPS coordinates (latitude, longitude).
-        To get the place name, call Nominatim API via shell:
+        Get GPS coordinates, then get place name.
+        Step 1: call this tool to get latitude and longitude.
+        Step 2: run shell command to get place name:
         curl -s "https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=json&accept-language=zh-CN"
-        Then read the display_name or address fields from the JSON response.
+        Extract display_name or address from the JSON response.
     """.trimIndent().replace("\n", " "),
     parameters = {
         InputSchema.Obj(
