@@ -1447,6 +1447,8 @@
   <string name="tool_ui_node_list">Node Processes</string>
   <string name="tool_ui_eval_js">JS: %s</string>
   <string name="tool_ui_eval_js_default">JavaScript</string>
+  <string name="tool_ui_geolocation">GPS Location</string>
+  <string name="tool_ui_reverse_geocode">Reverse Geocode</string>
   <string name="tool_ui_skill_name">Skill: %1$s</string>
   <string name="tool_ui_skill_name_path">Skill: %1$s / %2$s</string>
   <string name="tool_ui_speaking">Speaking: %s</string>

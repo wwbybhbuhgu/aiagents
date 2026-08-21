@@ -24,6 +24,8 @@ import com.aiagents.ui.modifier.shimmer
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.ComputerTerminal01
 import me.rerere.hugeicons.stroke.Code
+import me.rerere.hugeicons.stroke.Location01
+import me.rerere.hugeicons.stroke.Earth
 
 // ── shell_bg ──
 object ShellBgToolUI : ToolUIRenderer {
@@ -302,5 +304,55 @@ object EvalJavascriptToolUI : ToolUIRenderer {
                 overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+// ── get_geolocation ──
+object GeolocationToolUI : ToolUIRenderer {
+    override val toolName: String = "get_geolocation"
+    override fun icon(context: ToolUIContext): ImageVector = HugeIcons.Location01
+
+    @Composable
+    override fun title(context: ToolUIContext): String = stringResource(R.string.tool_ui_geolocation)
+
+    override fun hasSummary(context: ToolUIContext): Boolean = context.content != null
+
+    @Composable
+    override fun Summary(context: ToolUIContext) {
+        val content = context.content ?: return
+        val text = content.getStringContent("text") ?: return
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+            fontSize = 11.sp,
+            lineHeight = 14.sp,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+// ── reverse_geocode ──
+object ReverseGeocodeToolUI : ToolUIRenderer {
+    override val toolName: String = "reverse_geocode"
+    override fun icon(context: ToolUIContext): ImageVector = HugeIcons.Earth
+
+    @Composable
+    override fun title(context: ToolUIContext): String = stringResource(R.string.tool_ui_reverse_geocode)
+
+    override fun hasSummary(context: ToolUIContext): Boolean = context.content != null
+
+    @Composable
+    override fun Summary(context: ToolUIContext) {
+        val content = context.content ?: return
+        val text = content.getStringContent("text") ?: return
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = 11.sp,
+            lineHeight = 14.sp,
+            maxLines = 6,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
