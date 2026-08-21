@@ -72,7 +72,7 @@ class TaskScheduler(
         val due = dao.getDue(now)
         for (task in due) {
             runCatching { executeTask(task) }
-                .onFailure { appendTaskLog(task, "⚠️ 定时任务 ${task.name} 执行失败: ${it.message}") }
+                .onFailure { appendTaskLog(task, "[FAIL] ${task.name}: ${it.message}") }
             val next = runCatching { CronParser.parseNext(task.schedule, System.currentTimeMillis()) }
                 .getOrDefault(now + 60_000L)
             dao.upsert(task.copy(lastRunAt = System.currentTimeMillis(), nextRunAt = next))
@@ -81,7 +81,7 @@ class TaskScheduler(
 
     private suspend fun executeTask(task: ScheduledTaskEntity) {
         val fileName = "${task.id}-${System.currentTimeMillis()}.txt"
-        val outputFile = writeTaskOutput(task, "▶️ 定时任务 ${task.name} 开始执行", fileName)
+        val outputFile = writeTaskOutput(task, "[START] ${task.name}", fileName)
         when (task.actionType) {
             "command" -> {
                 val workspaceId = task.workspaceId ?: return
@@ -89,7 +89,7 @@ class TaskScheduler(
                 val output = result.stderr.ifBlank { result.stdout }.trim().take(4000)
                 writeTaskOutput(
                     task,
-                    "✅ 定时任务 ${task.name} 完成 (exit=${result.exitCode})\n" +
+                    "[DONE] ${task.name} (exit=${result.exitCode})\n" +
                         if (output.isBlank()) "(无输出)" else output,
                     fileName,
                     append = true,
@@ -98,7 +98,7 @@ class TaskScheduler(
             }
 
             "agent" -> {
-                writeTaskOutput(task, "▶️ 定时任务 ${task.name} 委派子 Agent 后台执行", fileName, append = true)
+                writeTaskOutput(task, "[AGENT] ${task.name} delegating to sub-agent", fileName, append = true)
                 val prompt = task.action
                 agentRunManager.launch(
                     parentConversationId = task.conversationId,
@@ -110,7 +110,7 @@ class TaskScheduler(
                         )
                         writeTaskOutput(
                             task,
-                            "✅ 定时任务 ${task.name} 子 Agent 完成\n$result",
+                            "[DONE] ${task.name} sub-agent completed\n$result",
                             fileName,
                             append = true,
                         )
@@ -184,7 +184,7 @@ class TaskScheduler(
         if (piece.isEmpty()) return
 
         val event = "【心跳事件】\n" + piece.joinToString("\n")
-        writeTaskOutput(task, "♥️ ${event}", "${task.id}-${System.currentTimeMillis()}.txt", append = false)
+        writeTaskOutput(task, "[HEARTBEAT] ${event}", "${task.id}-${System.currentTimeMillis()}.txt", append = false)
         // 事件驱动: 注入父对话并唤醒主 Agent, 由主 Agent 决定是否主动开口/行动
         chatService.injectHeartbeatEvent(Uuid.parse(task.conversationId), event)
     }

@@ -76,7 +76,7 @@ object ShellOutputToolUI : ToolUIRenderer {
         val combined = listOf(stdout, stderr).filterNot { it.isBlank() }.joinToString("\n").trim()
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = if (running) "\u25B6 Running" else "\u23F9 Stopped",
+                text = if (running) "Running" else "Stopped",
                 style = MaterialTheme.typography.labelSmall,
                 color = if (running) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -191,7 +191,7 @@ object NodeOutputToolUI : ToolUIRenderer {
         val combined = listOf(output, result).filterNot { it.isBlank() }.joinToString("\n").trim()
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = if (running) "\u25B6 Running" else "\u23F9 Done",
+                text = if (running) "Running" else "Done",
                 style = MaterialTheme.typography.labelSmall,
                 color = if (running) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             )

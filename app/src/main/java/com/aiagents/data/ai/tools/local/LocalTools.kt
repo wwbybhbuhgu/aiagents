@@ -126,6 +126,7 @@ class LocalTools(
     val getLocationTool by lazy { buildGetLocationTool(context, eventBus) }
 
     val geolocationTool by lazy { buildGeolocationTool(context) }
+    val reverseGeocodingTool by lazy { buildReverseGeocodingTool(context) }
 
     val phoneCallTool by lazy { buildPhoneCallTool(context, eventBus) }
 
@@ -192,6 +193,7 @@ class LocalTools(
             tools.add(readContactsTool)
             tools.add(getLocationTool)
             tools.add(geolocationTool)
+            tools.add(reverseGeocodingTool)
             tools.add(phoneCallTool)
             tools.add(keyboardInputTool)
             tools.add(restoreImeTool)

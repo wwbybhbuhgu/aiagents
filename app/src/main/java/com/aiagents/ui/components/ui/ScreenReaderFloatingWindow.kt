@@ -390,18 +390,12 @@ LaunchedEffect(Unit) {
                         },
                     contentAlignment = Alignment.CenterStart,
                 ) {
-                    Text(
-                        text = stringResource(R.string.screen_reader_chat_title),
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                if (isGenerating) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(14.dp),
-                        strokeWidth = 1.5.dp,
-                    )
+                    if (isGenerating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            strokeWidth = 1.5.dp,
+                        )
+                    }
                 }
                 IconButton(
                     onClick = { showSelector = !showSelector },
