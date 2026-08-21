@@ -579,13 +579,11 @@ class ChatService(
 
             // memory tool
             if (!model.abilities.contains(ModelAbility.TOOL)) {
-                if (assistant.enableWebSearch || mcpManager.getAllAvailableTools().isNotEmpty()) {
-                    addError(
-                        IllegalStateException(context.getString(R.string.tools_warning)),
-                        conversationId,
-                        title = context.getString(R.string.error_title_tool_unavailable)
-                    )
-                }
+                addError(
+                    IllegalStateException(context.getString(R.string.tools_warning)),
+                    conversationId,
+                    title = context.getString(R.string.error_title_tool_unavailable)
+                )
             }
 
             // check invalid messages
@@ -757,17 +755,16 @@ class ChatService(
         conversationId: Uuid,
         includeDelegation: Boolean = true,
     ): List<Tool> = buildList {
-        if (assistant.enableWebSearch) {
-            addAll(
-                createSearchTools(
-                    context = context,
-                    settings = settings,
-                    workspaceId = assistant.workspaceId?.toString(),
-                    workspaceRepository = workspaceRepository,
-                    proxyAddress = proxyManager.localProxyAddress,
-                ) { params, content -> compressPageContent(params, content) }
-            )
-        }
+        // 联网搜索始终启用
+        addAll(
+            createSearchTools(
+                context = context,
+                settings = settings,
+                workspaceId = assistant.workspaceId?.toString(),
+                workspaceRepository = workspaceRepository,
+                proxyAddress = proxyManager.localProxyAddress,
+            ) { params, content -> compressPageContent(params, content) }
+        )
         // 内置工具全部启用，不提供关闭选项（Agent 模式）；
         // 手机自动化工具需显式开启 enablePhoneAutomation，否则不注入，避免 AI 自发操作屏幕
         val localToolOptions = if (assistant.enablePhoneAutomation) {

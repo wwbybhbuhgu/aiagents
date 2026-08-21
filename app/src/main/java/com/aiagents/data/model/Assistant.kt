@@ -39,7 +39,7 @@ data class Assistant(
     val customBodies: List<CustomBody> = emptyList(),
     val mcpServers: Set<Uuid> = emptySet(),
     val localTools: List<LocalToolOption> = listOf(LocalToolOption.TimeInfo),
-    val enableWebSearch: Boolean = false, // 网络搜索开关(每个助手独立)
+    val enableWebSearch: Boolean = true, // 网络搜索开关(每个助手独立)
     val enablePhoneAutomation: Boolean = true, // 手机自动化开关(Agent 模式默认开启, 用户可关闭)
     val enableBrowserAutomation: Boolean = true, // 浏览器自动化开关(默认开启, AI 可发起内置浏览器操作)
     val userPriority: String = "", // 用户设置的最重要事项(所有 AI 任务/后台侦测优先据此行事, 如家长监护)
