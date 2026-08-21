@@ -372,6 +372,16 @@ object ToolUIRegistry {
         FileShareToolUI,
         TodoToolUI,
         LocalSpeechRecognitionToolUI,
+        // 后台进程工具
+        ShellBgToolUI,
+        ShellOutputToolUI,
+        ShellKillToolUI,
+        ShellListToolUI,
+        NodeBgToolUI,
+        NodeOutputToolUI,
+        NodeKillToolUI,
+        NodeListToolUI,
+        EvalJavascriptToolUI,
     ).associateBy { it.toolName }
 
     /** 查找工具对应的渲染器, 未注册时返回默认渲染器 */

@@ -125,10 +125,6 @@ fun ChatInput(
     hazeState: HazeState,
     enableSearch: Boolean,
     onToggleSearch: (Boolean) -> Unit,
-    enablePhoneAutomation: Boolean = false,
-    onTogglePhoneAutomation: (Boolean) -> Unit = {},
-    enableBrowserAutomation: Boolean = false,
-    onToggleBrowserAutomation: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
     completionProviders: List<ChatCompletionProvider> = emptyList(),
     onUpdateChatModel: (Model) -> Unit,
@@ -291,66 +287,6 @@ fun ChatInput(
                                 },
                                 onUpdateSearchService = onUpdateSearchService,
                             )
-
-                            // Phone Automation
-                            val enableAutoMsg = stringResource(R.string.phone_automation_enabled)
-                            val disableAutoMsg = stringResource(R.string.phone_automation_disabled)
-                            ToggleSurface(
-                                checked = enablePhoneAutomation,
-                                onClick = {
-                                    onTogglePhoneAutomation(!enablePhoneAutomation)
-                                    toaster.show(
-                                        message = if (!enablePhoneAutomation) enableAutoMsg else disableAutoMsg,
-                                        duration = 1.seconds,
-                                        type = if (!enablePhoneAutomation) {
-                                            ToastType.Success
-                                        } else {
-                                            ToastType.Normal
-                                        }
-                                    )
-                                }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = HugeIcons.SmartPhone01,
-                                        contentDescription = stringResource(R.string.use_phone_automation),
-                                    )
-                                }
-                            }
-
-                            // Built-in browser automation (AI-initiated, toggle switch)
-                            val enableBrowserMsg = stringResource(R.string.browser_automation_enabled)
-                            val disableBrowserMsg = stringResource(R.string.browser_automation_disabled)
-                            ToggleSurface(
-                                checked = enableBrowserAutomation,
-                                onClick = {
-                                    onToggleBrowserAutomation(!enableBrowserAutomation)
-                                    toaster.show(
-                                        message = if (!enableBrowserAutomation) enableBrowserMsg else disableBrowserMsg,
-                                        duration = 1.seconds,
-                                        type = if (!enableBrowserAutomation) {
-                                            ToastType.Success
-                                        } else {
-                                            ToastType.Normal
-                                        }
-                                    )
-                                }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = HugeIcons.Earth,
-                                        contentDescription = stringResource(R.string.use_built_in_browser),
-                                    )
-                                }
-                            }
 
                             // Reasoning
                             val model = settings.getCurrentChatModel()

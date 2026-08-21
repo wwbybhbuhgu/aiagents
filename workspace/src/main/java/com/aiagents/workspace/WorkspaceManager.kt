@@ -25,7 +25,7 @@ class WorkspaceManager(
 
     fun ensureWorkspace(root: String): File {
         val dir = workspaceDir(root)
-        filesDir(root).apply { mkdirs(); makeWorldAccessible() }
+        filesDir(root).apply { mkdirs(); makeWorldAccessible(); createNomediaIfMissing() }
         linuxDir(root).mkdirs()
         tempDir(root).apply { mkdirs(); makeWorldAccessible() }
         return dir
@@ -41,6 +41,14 @@ class WorkspaceManager(
         setReadable(true, false)
         setExecutable(true, false)
         return this
+    }
+
+    /** 在目录下创建 .nomedia, 阻止安卓相册扫描工具产出的文件 */
+    private fun File.createNomediaIfMissing() {
+        val nomedia = File(this, ".nomedia")
+        if (!nomedia.exists()) {
+            runCatching { nomedia.createNewFile() }
+        }
     }
 
     fun filesDir(root: String): File = File(workspaceDir(root), FILES_DIR)

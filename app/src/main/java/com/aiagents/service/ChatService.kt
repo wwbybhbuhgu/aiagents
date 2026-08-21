@@ -765,18 +765,9 @@ class ChatService(
                 proxyAddress = proxyManager.localProxyAddress,
             ) { params, content -> compressPageContent(params, content) }
         )
-        // 内置工具全部启用，不提供关闭选项（Agent 模式）；
-        // 手机自动化工具需显式开启 enablePhoneAutomation，否则不注入，避免 AI 自发操作屏幕
-        val localToolOptions = if (assistant.enablePhoneAutomation) {
-            LocalToolOption.all
-        } else {
-            LocalToolOption.all - LocalToolOption.Automation
-        }
-        addAll(localTools.getTools(localToolOptions, assistant.id.toString()))
-        // 浏览器自动化由 AI 发起: 仅当开启 enableBrowserAutomation 时注入整套 browser_* 工具
-        if (assistant.enableBrowserAutomation) {
-            addAll(localTools.browserTools)
-        }
+        // 内置工具全部启用
+        addAll(localTools.getTools(LocalToolOption.all, assistant.id.toString()))
+        addAll(localTools.browserTools)
         addAll(buildTodoTools(conversationId.toString()))
         add(buildWebFetchTool(
             proxyManager = proxyManager,

@@ -80,7 +80,7 @@ import com.aiagents.ui.pages.assistant.AssistantPage
 import com.aiagents.ui.pages.assistant.detail.AssistantBasicPage
 import com.aiagents.ui.pages.assistant.detail.AssistantDetailPage
 import com.aiagents.ui.pages.assistant.detail.AssistantExtensionsPage
-import com.aiagents.ui.pages.assistant.detail.AssistantLocalToolPage
+import com.aiagents.ui.pages.assistant.detail.AssistantExtensionsPage
 import com.aiagents.ui.pages.assistant.detail.AssistantMcpPage
 import com.aiagents.ui.pages.assistant.detail.AssistantMemoryPage
 import com.aiagents.ui.pages.assistant.detail.AssistantPromptPage
@@ -534,10 +534,6 @@ class RouteActivity : ComponentActivity() {
                                 AssistantMcpPage(key.id)
                             }
 
-                            entry<Screen.AssistantLocalTool> { key ->
-                                AssistantLocalToolPage(key.id)
-                            }
-
                             entry<Screen.AssistantInjections> { key ->
                                 AssistantExtensionsPage(key.id)
                             }
@@ -800,9 +796,6 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data class AssistantMcp(val id: String) : Screen
-
-    @Serializable
-    data class AssistantLocalTool(val id: String) : Screen
 
     @Serializable
     data class AssistantInjections(val id: String) : Screen

@@ -81,7 +81,14 @@ val repositoryModule = module {
             runCatching {
                 Runtime.getRuntime().exec(arrayOf("chmod", "771", absolutePath)).waitFor()
             }
+            // 阻止相册扫描工具产出的文件
+            File(this, ".nomedia").let { f -> if (!f.exists()) runCatching { f.createNewFile() } }
             return this
+        }
+        // 主 AI-Agent 目录也加 .nomedia
+        File(Environment.getExternalStorageDirectory(), AI_AGENT_SHARED_DIR).let { dir ->
+            dir.mkdirs()
+            File(dir, ".nomedia").let { f -> if (!f.exists()) runCatching { f.createNewFile() } }
         }
         WorkspaceManager(
             baseDir = File(context.filesDir, "workspaces"),

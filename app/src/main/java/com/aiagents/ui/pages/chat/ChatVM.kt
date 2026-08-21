@@ -107,16 +107,6 @@ class ChatVM(
         it.getCurrentAssistant().enableWebSearch
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    // 手机自动化(每个助手独立, 默认关闭)
-    val enablePhoneAutomation = settings.map {
-        it.getCurrentAssistant().enablePhoneAutomation
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
-    // 浏览器自动化(每个助手独立, 默认关闭)
-    val enableBrowserAutomation = settings.map {
-        it.getCurrentAssistant().enableBrowserAutomation
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
     // 当前模型
     val currentChatModel = settings.map { settings ->
         settings.getCurrentChatModel()

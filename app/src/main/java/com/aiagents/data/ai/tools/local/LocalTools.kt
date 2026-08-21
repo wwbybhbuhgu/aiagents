@@ -6,6 +6,7 @@ import com.aiagents.data.automation.AutoAccessibilityController
 import com.aiagents.data.datastore.SettingsStore
 import com.aiagents.data.event.AppEventBus
 import com.aiagents.tts.provider.TTSManager
+import java.io.File
 
 class LocalTools(
     private val context: Context,
@@ -14,9 +15,41 @@ class LocalTools(
     private val settingsStore: SettingsStore,
     private val workspaceRepository: com.aiagents.data.repository.WorkspaceRepository,
 ) {
-    val javascriptTool by lazy { buildJavascriptTool() }
+    val javascriptTool by lazy {
+        val proxyAddr: String? = try {
+            val pm = org.koin.java.KoinJavaComponent.get<com.aiagents.data.proxy.ProxyManager>(
+                com.aiagents.data.proxy.ProxyManager::class.java
+            )
+            pm.localProxyAddress
+        } catch (_: Exception) { null }
+        buildJavascriptTool(context, workspaceRepository, proxyAddr)
+    }
 
     private val pathResolver by lazy { WorkspacePathResolver(context, workspaceRepository) }
+
+    val backgroundProcessManager by lazy {
+        val mgr = BackgroundProcessManager()
+        try {
+            val pm = org.koin.java.KoinJavaComponent.get<com.aiagents.data.proxy.ProxyManager>(
+                com.aiagents.data.proxy.ProxyManager::class.java
+            )
+            mgr.proxyEnv = pm.proxyEnv()
+        } catch (_: Exception) {}
+        mgr
+    }
+    val backgroundShellTools by lazy {
+        buildBackgroundShellTools(backgroundProcessManager) {
+            runCatching {
+                val ws = kotlinx.coroutines.runBlocking { workspaceRepository.getDefaultWorkspace() }
+                if (ws != null) File(context.filesDir, "workspaces/${ws.id}/files").also { it.mkdirs() }
+                else null
+            }.getOrDefault(null)
+        }
+    }
+    val nodeProcessManager by lazy { NodeProcessManager(context) }
+    val backgroundNodeTools by lazy {
+        buildBackgroundNodeTools(nodeProcessManager, workspaceRepository, context)
+    }
 
     val timeTool by lazy { buildTimeInfoTool() }
 
@@ -177,6 +210,9 @@ class LocalTools(
         if (options.contains(LocalToolOption.ForegroundApp)) {
             tools.add(buildForegroundAppTool(context, eventBus))
         }
+        // 后台进程工具 (始终可用)
+        tools.addAll(backgroundShellTools)
+        tools.addAll(backgroundNodeTools)
         return tools
     }
 }

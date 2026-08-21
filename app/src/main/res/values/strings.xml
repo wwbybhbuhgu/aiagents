@@ -263,6 +263,7 @@
   <string name="tool_name_file_share">Share file</string>
   <string name="tool_name_show_file">Show file</string>
   <string name="tool_name_render_html_card">HTML card</string>
+  <string name="html_card_title">HTML Card</string>
   <string name="tool_name_activity">Open activity</string>
   <string name="tool_name_use_skill">Use skill</string>
   <string name="tool_name_cv_image">Computer vision</string>
@@ -1433,6 +1434,19 @@
   <string name="tool_ui_shell_default">Shell</string>
   <string name="tool_ui_shell_timeout">timeout</string>
   <string name="tool_ui_shell_exit">exit %s</string>
+  <!-- 后台进程工具 -->
+  <string name="tool_ui_shell_bg">Shell BG: %s</string>
+  <string name="tool_ui_shell_bg_default">Shell BG</string>
+  <string name="tool_ui_shell_output">Shell Output: %s</string>
+  <string name="tool_ui_shell_kill">Shell Kill: %s</string>
+  <string name="tool_ui_shell_list">Shell Processes</string>
+  <string name="tool_ui_node_bg">Node BG: %s</string>
+  <string name="tool_ui_node_bg_default">Node BG</string>
+  <string name="tool_ui_node_output">Node Output: %s</string>
+  <string name="tool_ui_node_kill">Node Kill: %s</string>
+  <string name="tool_ui_node_list">Node Processes</string>
+  <string name="tool_ui_eval_js">JS: %s</string>
+  <string name="tool_ui_eval_js_default">JavaScript</string>
   <string name="tool_ui_skill_name">Skill: %1$s</string>
   <string name="tool_ui_skill_name_path">Skill: %1$s / %2$s</string>
   <string name="tool_ui_speaking">Speaking: %s</string>

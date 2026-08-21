@@ -112,8 +112,6 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
     val processingStatus by vm.processingStatus.collectAsStateWithLifecycle()
     val currentChatModel by vm.currentChatModel.collectAsStateWithLifecycle()
     val enableWebSearch by vm.enableWebSearch.collectAsStateWithLifecycle()
-    val enablePhoneAutomation by vm.enablePhoneAutomation.collectAsStateWithLifecycle()
-    val enableBrowserAutomation by vm.enableBrowserAutomation.collectAsStateWithLifecycle()
     val errors by vm.errors.collectAsStateWithLifecycle()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -213,8 +211,6 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
                     vm = vm,
                     chatListState = chatListState,
                     enableWebSearch = enableWebSearch,
-                    enablePhoneAutomation = enablePhoneAutomation,
-                    enableBrowserAutomation = enableBrowserAutomation,
                     currentChatModel = currentChatModel,
                     bigScreen = true,
                     errors = errors,
@@ -247,8 +243,6 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
                     vm = vm,
                     chatListState = chatListState,
                     enableWebSearch = enableWebSearch,
-                    enablePhoneAutomation = enablePhoneAutomation,
-                    enableBrowserAutomation = enableBrowserAutomation,
                     currentChatModel = currentChatModel,
                     bigScreen = false,
                     errors = errors,
@@ -276,8 +270,6 @@ private fun ChatPageContent(
     vm: ChatVM,
     chatListState: LazyListState,
     enableWebSearch: Boolean,
-    enablePhoneAutomation: Boolean,
-    enableBrowserAutomation: Boolean,
     currentChatModel: Model?,
     errors: List<ChatError>,
     onDismissError: (Uuid) -> Unit,
@@ -347,36 +339,6 @@ private fun ChatPageContent(
                                 assistants = setting.assistants.map { assistant ->
                                     if (assistant.id == current.id) {
                                         assistant.copy(enableWebSearch = !enableWebSearch)
-                                    } else {
-                                        assistant
-                                    }
-                                }
-                            )
-                        )
-                    },
-                    enablePhoneAutomation = enablePhoneAutomation,
-                    onTogglePhoneAutomation = {
-                        val current = setting.getCurrentAssistant()
-                        vm.updateSettings(
-                            setting.copy(
-                                assistants = setting.assistants.map { assistant ->
-                                    if (assistant.id == current.id) {
-                                        assistant.copy(enablePhoneAutomation = !enablePhoneAutomation)
-                                    } else {
-                                        assistant
-                                    }
-                                }
-                            )
-                        )
-                    },
-                    enableBrowserAutomation = enableBrowserAutomation,
-                    onToggleBrowserAutomation = {
-                        val current = setting.getCurrentAssistant()
-                        vm.updateSettings(
-                            setting.copy(
-                                assistants = setting.assistants.map { assistant ->
-                                    if (assistant.id == current.id) {
-                                        assistant.copy(enableBrowserAutomation = !enableBrowserAutomation)
                                     } else {
                                         assistant
                                     }

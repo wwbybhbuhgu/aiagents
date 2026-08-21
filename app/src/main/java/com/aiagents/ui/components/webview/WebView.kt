@@ -3,6 +3,7 @@ package com.aiagents.ui.components.webview
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.util.Log
+import android.view.MotionEvent
 import android.view.ViewGroup.LayoutParams
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
@@ -110,21 +111,72 @@ fun WebView(
                         LayoutParams.MATCH_PARENT
                     )
 
-                    state.webView = this // Assign the WebView instance to the state
+                    state.webView = this
 
                     onCreated(this)
 
-                    settings.javaScriptEnabled = true // Enable JavaScript
+                    settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     settings.allowContentAccess = true
                     settings.apply(state.settings)
 
-                    // Use the created clients
                     this.webChromeClient = webChromeClient
                     this.webViewClient = webViewClient
 
                     state.interfaces.forEach { (name, obj) ->
                         addJavascriptInterface(obj, name)
+                    }
+
+                    // 阻止 LazyColumn 抢滚动: 检测触摸点处是否有可滚动元素
+                    var isScrollable = false
+                    evaluateJavascript(
+                        """
+                        (function(){
+                          function findScrollable(el) {
+                            if (!el) return null;
+                            var s = getComputedStyle(el);
+                            var ov = s.overflow + s.overflowX + s.overflowY;
+                            if (ov.indexOf('auto') !== -1 || ov.indexOf('scroll') !== -1) {
+                              if (el.scrollHeight > el.clientHeight + 2) return el;
+                              if (el.scrollWidth > el.clientWidth + 2) return el;
+                            }
+                            return findScrollable(el.parentElement);
+                          }
+                          function atPoint(x, y) {
+                            var el = document.elementFromPoint(x, y);
+                            return findScrollable(el) !== null;
+                          }
+                          window.__hasScrollable = atPoint;
+                        })();
+                        """, null
+                    )
+                    setOnTouchListener { v, event ->
+                        val x = event.x.toInt()
+                        val y = event.y.toInt()
+                        when (event.action) {
+                            MotionEvent.ACTION_DOWN -> {
+                                isScrollable = true
+                                v.parent?.requestDisallowInterceptTouchEvent(true)
+                                evaluateJavascript(
+                                    "window.__hasScrollable($x,$y)", { result ->
+                                        isScrollable = result?.trim('"') == "true"
+                                        if (!isScrollable) {
+                                            v.parent?.requestDisallowInterceptTouchEvent(false)
+                                        }
+                                    }
+                                )
+                            }
+                            MotionEvent.ACTION_MOVE -> {
+                                if (!isScrollable) {
+                                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                                }
+                            }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                v.parent?.requestDisallowInterceptTouchEvent(false)
+                                isScrollable = false
+                            }
+                        }
+                        false
                     }
                 }
             },
