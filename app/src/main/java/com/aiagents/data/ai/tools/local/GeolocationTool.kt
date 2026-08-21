@@ -15,17 +15,17 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 /**
- * GPS 定位工具 — 获取设备真实地理位置 (经纬度 + 地名)。
+ * GPS 定位工具 — 获取设备真实 GPS 坐标。
  *
- * 使用 Android LocationManager 获取 GPS 坐标，
- * 然后通过反向地理编码获取地名。
+ * 返回纬度、经度。地名由 AI 通过 Nominatim API 反向地理编码获取。
  */
 internal fun buildGeolocationTool(context: Context): Tool = Tool(
     name = "get_geolocation",
     description = """
-        Get the device's real-world GPS location (latitude, longitude, and place name).
-        Returns current coordinates and reverse-geocoded city/country.
-        Useful for weather, local search, or any location-aware task.
+        Get the device's GPS coordinates (latitude, longitude).
+        To get the place name, call Nominatim API via shell:
+        curl -s "https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=json&accept-language=zh-CN"
+        Then read the display_name or address fields from the JSON response.
     """.trimIndent().replace("\n", " "),
     parameters = {
         InputSchema.Obj(
@@ -55,7 +55,7 @@ private suspend fun getLocation(context: Context): String = suspendCoroutine { c
     // 先尝试获取最近一次位置
     val lastKnown = lm.getLastKnownLocation(provider)
     if (lastKnown != null && (System.currentTimeMillis() - lastKnown.time) < 60_000) {
-        cont.resume(formatLocation(context, lastKnown))
+        cont.resume(formatCoords(lastKnown))
         return@suspendCoroutine
     }
 
@@ -66,7 +66,7 @@ private suspend fun getLocation(context: Context): String = suspendCoroutine { c
             if (!resumed) {
                 resumed = true
                 lm.removeUpdates(this)
-                cont.resume(formatLocation(context, location))
+                cont.resume(formatCoords(location))
             }
         }
         @Deprecated("Deprecated in API")
@@ -92,28 +92,8 @@ private suspend fun getLocation(context: Context): String = suspendCoroutine { c
     }, 10_000)
 }
 
-private fun formatLocation(context: Context, loc: Location): String {
+private fun formatCoords(loc: Location): String {
     val lat = String.format("%.6f", loc.latitude)
     val lon = String.format("%.6f", loc.longitude)
-
-    // 反向地理编码
-    val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
-    val addr = try {
-        @Suppress("DEPRECATION")
-        val list = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
-        if (!list.isNullOrEmpty()) {
-            val a = list[0]
-            buildString {
-                a.locality?.let { append(it) }
-                a.adminArea?.let { if (isNotEmpty()) append(", "); append(it) }
-                a.countryName?.let { if (isNotEmpty()) append(", "); append(it) }
-            }
-        } else ""
-    } catch (_: Exception) { "" }
-
-    return buildString {
-        append("Latitude: $lat\n")
-        append("Longitude: $lon\n")
-        if (addr.isNotBlank()) append("Location: $addr")
-    }
+    return "latitude: $lat, longitude: $lon"
 }
