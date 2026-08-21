@@ -21,8 +21,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import java.io.File
-import java.net.InetSocketAddress
-import java.net.Proxy
 import kotlin.coroutines.resume
 
 // ──────────────────────────────────────────────────────────────────────
@@ -38,12 +36,10 @@ import kotlin.coroutines.resume
  * - `path`      — 路径工具 (join, resolve, basename, dirname, extname, sep, normalize)
  * - `os`        — 系统信息 (hostname, platform, arch, type, release, tmpdir, EOL)
  * - `process`   — 进程信息 (cwd, env, exitCode)
- * - `nativeFetch` — 通过 Java HttpURLConnection 发起 HTTP 请求 (支持代理)
  */
 @SuppressLint("SetJavaScriptEnabled")
 internal class NodeJsBridge(
     private val workspaceDir: File,
-    private val proxyAddress: String? = null,
 ) {
 
     // ── fs 模块 ──────────────────────────────────────────────────────
@@ -321,74 +317,6 @@ internal class NodeJsBridge(
     @JavascriptInterface
     fun processEnv(): String = org.json.JSONObject(System.getenv() as Map<*, *>).toString()
 
-    // ── nativeFetch: 通过 Java HttpURLConnection 发起 HTTP 请求 (支持代理) ──
-
-    @JavascriptInterface
-    fun nativeFetch(url: String, options: String): String {
-        return try {
-            val opts = if (options.isNotBlank()) org.json.JSONObject(options) else org.json.JSONObject()
-            val method = opts.optString("method", "GET").uppercase()
-            val timeout = opts.optInt("timeout", 15000)
-            val body = opts.optString("body", null)
-
-            val conn = run {
-                val url = java.net.URL(url)
-                if (!proxyAddress.isNullOrBlank()) {
-                    val parts = proxyAddress.split(":")
-                    val host = parts[0]
-                    val port = parts.getOrNull(1)?.toIntOrNull() ?: 8080
-                    url.openConnection(Proxy(Proxy.Type.HTTP, InetSocketAddress(host, port))) as java.net.HttpURLConnection
-                } else {
-                    url.openConnection() as java.net.HttpURLConnection
-                }
-            }
-            conn.requestMethod = method
-            conn.connectTimeout = timeout
-            conn.readTimeout = timeout
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) AppleWebKit/537.36")
-            conn.setRequestProperty("Accept", "*/*")
-
-            // 设置请求头
-            val headers = opts.optJSONObject("headers")
-            headers?.keys()?.forEach { key ->
-                conn.setRequestProperty(key, headers.getString(key))
-            }
-
-            // 写入请求体
-            if (!body.isNullOrBlank() && method != "GET") {
-                conn.doOutput = true
-                conn.outputStream.bufferedWriter().use { it.write(body) }
-            }
-
-            conn.connect()
-
-            val responseCode = conn.responseCode
-            val responseBody = try {
-                val stream = if (responseCode in 200..299) conn.inputStream else conn.errorStream
-                stream?.bufferedReader()?.use { it.readText() } ?: ""
-            } catch (_: Exception) { "" }
-
-            val responseHeaders = org.json.JSONObject()
-            conn.headerFields?.forEach { (key, values) ->
-                if (key != null) responseHeaders.put(key, values.joinToString(", "))
-            }
-
-            org.json.JSONObject().apply {
-                put("status", responseCode)
-                put("statusText", conn.responseMessage ?: "")
-                put("ok", responseCode in 200..299)
-                put("body", responseBody)
-                put("headers", responseHeaders)
-            }.toString()
-        } catch (e: Exception) {
-            org.json.JSONObject().apply {
-                put("error", e.message ?: e.toString())
-                put("status", 0)
-                put("ok", false)
-            }.toString()
-        }
-    }
-
     // ── 内部工具 ────────────────────────────────────────────────────
 
     private fun resolveFile(path: String): File {
@@ -415,17 +343,16 @@ internal class NodeJsBridge(
  * - `path`           — 路径工具
  * - `os`             — 系统信息
  * - `process`        — 进程信息 (cwd, env)
- * - `fetch`          — 通过 nativeFetch 实现 (支持代理)
  */
 internal fun buildJavascriptTool(
     context: Context,
     workspaceRepository: WorkspaceRepository,
-    proxyAddress: String? = null,
 ): Tool = Tool(
     name = "eval_javascript",
     description = """
-        Execute JavaScript with Node.js-like APIs and browser networking.
-        Modules: fs (readFileSync/writeFileSync/readdirSync/statSync/mkdirSync/rmSync/cpSync/mvSync/existsSync/readJsonSync/writeJsonSync), child_process (execSync), path (join/resolve/basename/dirname/extname), os (hostname/platform/arch), process (cwd/env). Also has fetch/XHR/DOM. Paths relative to workspace root.
+        Execute JavaScript with Node.js-like APIs (fs, child_process, path, os, process).
+        Network requests: use shell_bg/node_bg with curl, NOT fetch/XHR (WebView cannot access external network).
+        Paths relative to workspace root.
     """.trimIndent().replace("\n", " "),
     parameters = {
         InputSchema.Obj(
@@ -455,7 +382,7 @@ internal fun buildJavascriptTool(
                 }
             }.getOrDefault(File(context.filesDir, "workspace").also { it.mkdirs() })
 
-            executeInWebView(context, code, wsDir, proxyAddress)
+            executeInWebView(context, code, wsDir)
         }
     }
 )
@@ -465,11 +392,10 @@ private suspend fun executeInWebView(
     context: Context,
     code: String,
     workspaceDir: File,
-    proxyAddress: String? = null,
 ): List<UIMessagePart> {
     return withContext(Dispatchers.Main) {
         val logs = arrayListOf<String>()
-        val bridge = NodeJsBridge(workspaceDir, proxyAddress)
+        val bridge = NodeJsBridge(workspaceDir)
         val webView = WebView(context.applicationContext).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -684,40 +610,6 @@ private suspend fun executeInWebView(
                     return modules[modName] || {};
                 }
 
-                // ── fetch: 通过 nativeFetch 实现 (支持代理) ──
-                var _origFetch = window.fetch;
-                window.fetch = function(url, opts) {
-                    var options = {};
-                    if (opts) {
-                        options.method = opts.method || 'GET';
-                        options.headers = opts.headers || {};
-                        options.body = opts.body || '';
-                        options.timeout = opts.timeout || 15000;
-                    }
-                    return new Promise(function(resolve, reject) {
-                        try {
-                            var raw = nodeBridge.nativeFetch(url, JSON.stringify(options));
-                            var resp = JSON.parse(raw);
-                            resolve({
-                                status: resp.status,
-                                statusText: resp.statusText,
-                                ok: resp.ok,
-                                headers: {
-                                    get: function(name) {
-                                        var h = resp.headers || {};
-                                        for (var k in h) { if (k.toLowerCase() === name.toLowerCase()) return h[k]; }
-                                        return null;
-                                    }
-                                },
-                                json: function() { return Promise.resolve(JSON.parse(resp.body || '{}')); },
-                                text: function() { return Promise.resolve(resp.body || ''); },
-                                body: resp.body || ''
-                            });
-                        } catch(e) {
-                            reject(e);
-                        }
-                    });
-                };
                 """, null
             )
 

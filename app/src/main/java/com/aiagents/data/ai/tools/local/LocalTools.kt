@@ -16,13 +16,7 @@ class LocalTools(
     private val workspaceRepository: com.aiagents.data.repository.WorkspaceRepository,
 ) {
     val javascriptTool by lazy {
-        val proxyAddr: String? = try {
-            val pm = org.koin.java.KoinJavaComponent.get<com.aiagents.data.proxy.ProxyManager>(
-                com.aiagents.data.proxy.ProxyManager::class.java
-            )
-            pm.localProxyAddress
-        } catch (_: Exception) { null }
-        buildJavascriptTool(context, workspaceRepository, proxyAddr)
+        buildJavascriptTool(context, workspaceRepository)
     }
 
     private val pathResolver by lazy { WorkspacePathResolver(context, workspaceRepository) }
@@ -131,6 +125,8 @@ class LocalTools(
 
     val getLocationTool by lazy { buildGetLocationTool(context, eventBus) }
 
+    val geolocationTool by lazy { buildGeolocationTool(context) }
+
     val phoneCallTool by lazy { buildPhoneCallTool(context, eventBus) }
 
     fun getTools(options: List<LocalToolOption>, assistantId: String? = null): List<Tool> {
@@ -195,6 +191,7 @@ class LocalTools(
             tools.add(sendSmsTool)
             tools.add(readContactsTool)
             tools.add(getLocationTool)
+            tools.add(geolocationTool)
             tools.add(phoneCallTool)
             tools.add(keyboardInputTool)
             tools.add(restoreImeTool)
