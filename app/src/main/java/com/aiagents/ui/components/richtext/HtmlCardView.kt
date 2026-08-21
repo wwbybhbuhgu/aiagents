@@ -3,7 +3,9 @@ package com.aiagents.ui.components.richtext
 import android.view.ViewGroup
 import android.webkit.WebSettings
 import android.webkit.WebView
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -84,9 +87,9 @@ fun HtmlCardView(
         )
     }
 
-    // 从 WebView 实例向上找原生 ViewGroup 父节点 (LazyColumn ItemView)
+    // 从 WebView 向上找到 LazyColumn 的 ItemView (ViewGroup)
     // 用于 requestDisallowInterceptTouchEvent 控制外层滚动拦截
-    var resolvedParent by remember { mutableStateOf<ViewGroup?>(null) }
+    var touchParent by remember { mutableStateOf<ViewGroup?>(null) }
 
     Column(modifier = modifier.fillMaxWidth()) {
         WebView(
@@ -95,48 +98,45 @@ fun HtmlCardView(
                 .clip(RoundedCornerShape(12.dp))
                 .height(part.height.coerceIn(160, 960).dp)
                 .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = {
-                            // 拖拽开始时禁止外层 LazyColumn 拦截触摸事件
-                            resolvedParent?.requestDisallowInterceptTouchEvent(true)
-                        },
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-                            val vertical = dragAmount.y
-                            val wv = webViewInstance ?: return@detectDragGestures
-                            // 检查 WebView 是否还能往该方向滚动
-                            val canScroll = when {
-                                vertical > 0 -> wv.canScrollVertically(1)
-                                vertical < 0 -> wv.canScrollVertically(-1)
-                                else -> false
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val downY = down.position.y
+                        var dragging = false
+
+                        // 跟踪拖拽, 不消费事件 (WebView 继续处理滚动)
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Main)
+                            val drag = event.changes.firstOrNull() ?: break
+                            val dy = drag.position.y - downY
+                            if (!dragging && kotlin.math.abs(dy) > 10) {
+                                dragging = true
+                                // 检测到垂直拖拽, 禁止外层 LazyColumn 抢事件
+                                touchParent?.requestDisallowInterceptTouchEvent(true)
                             }
-                            // 不能滚了 → 放行, 让外层 LazyColumn 接管滚动
-                            if (!canScroll) {
-                                resolvedParent?.requestDisallowInterceptTouchEvent(false)
+                            if (dragging && !drag.pressed) {
+                                // 手指抬起, 恢复外层拦截
+                                touchParent?.requestDisallowInterceptTouchEvent(false)
+                                break
                             }
-                        },
-                        onDragEnd = {
-                            resolvedParent?.requestDisallowInterceptTouchEvent(false)
-                        },
-                        onDragCancel = {
-                            resolvedParent?.requestDisallowInterceptTouchEvent(false)
-                        },
-                    )
+                        }
+                    }
                 },
             onCreated = { webView ->
                 webViewInstance = webView
-                // 从 WebView 实例向上找合适的 ViewGroup
-                var p: android.view.ViewParent? = webView.parent
-                while (p != null) {
-                    if (p is ViewGroup && p.javaClass.simpleName.contains("ItemView")) {
-                        resolvedParent = p
-                        break
+                // 从 WebView 向上找合适的 ViewGroup (LazyColumn ItemView)
+                if (touchParent == null) {
+                    var p: android.view.ViewParent? = webView.parent
+                    while (p != null) {
+                        if (p is ViewGroup && p.javaClass.simpleName.contains("ItemView")) {
+                            touchParent = p
+                            break
+                        }
+                        if (p is ViewGroup && p.parent?.let { it.javaClass.simpleName.contains("Lazy") } == true) {
+                            touchParent = p
+                            break
+                        }
+                        p = p.parent
                     }
-                    if (p is ViewGroup && p.parent?.let { it.javaClass.simpleName.contains("Lazy") } == true) {
-                        resolvedParent = p
-                        break
-                    }
-                    p = p.parent
                 }
             },
         )
