@@ -1,7 +1,9 @@
 package com.aiagents.ui.components.richtext
 
+import android.view.ViewGroup
 import android.webkit.WebSettings
 import android.webkit.WebView
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.aiagents.ai.provider.Model
@@ -81,13 +84,61 @@ fun HtmlCardView(
         )
     }
 
+    // 从 WebView 实例向上找原生 ViewGroup 父节点 (LazyColumn ItemView)
+    // 用于 requestDisallowInterceptTouchEvent 控制外层滚动拦截
+    var resolvedParent by remember { mutableStateOf<ViewGroup?>(null) }
+
     Column(modifier = modifier.fillMaxWidth()) {
         WebView(
             state = webViewState,
             modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
-                .height(part.height.coerceIn(160, 960).dp),
-            onCreated = { webViewInstance = it },
+                .height(part.height.coerceIn(160, 960).dp)
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = {
+                            // 拖拽开始时禁止外层 LazyColumn 拦截触摸事件
+                            resolvedParent?.requestDisallowInterceptTouchEvent(true)
+                        },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            val vertical = dragAmount.y
+                            val wv = webViewInstance ?: return@detectDragGestures
+                            // 检查 WebView 是否还能往该方向滚动
+                            val canScroll = when {
+                                vertical > 0 -> wv.canScrollVertically(1)
+                                vertical < 0 -> wv.canScrollVertically(-1)
+                                else -> false
+                            }
+                            // 不能滚了 → 放行, 让外层 LazyColumn 接管滚动
+                            if (!canScroll) {
+                                resolvedParent?.requestDisallowInterceptTouchEvent(false)
+                            }
+                        },
+                        onDragEnd = {
+                            resolvedParent?.requestDisallowInterceptTouchEvent(false)
+                        },
+                        onDragCancel = {
+                            resolvedParent?.requestDisallowInterceptTouchEvent(false)
+                        },
+                    )
+                },
+            onCreated = { webView ->
+                webViewInstance = webView
+                // 从 WebView 实例向上找合适的 ViewGroup
+                var p: android.view.ViewParent? = webView.parent
+                while (p != null) {
+                    if (p is ViewGroup && p.javaClass.simpleName.contains("ItemView")) {
+                        resolvedParent = p
+                        break
+                    }
+                    if (p is ViewGroup && p.parent?.let { it.javaClass.simpleName.contains("Lazy") } == true) {
+                        resolvedParent = p
+                        break
+                    }
+                    p = p.parent
+                }
+            },
         )
     }
 }

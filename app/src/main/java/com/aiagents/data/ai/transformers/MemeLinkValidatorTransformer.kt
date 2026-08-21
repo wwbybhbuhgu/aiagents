@@ -93,8 +93,12 @@ class MemePathValidatorTransformer(
     /** 通过 ContentProvider 尝试读取, 能读到说明是真实存在的文件 */
     private fun isReadableContentUri(uri: String): Boolean = runCatching {
         val parsed = android.net.Uri.parse(uri)
-        context.contentResolver.openInputStream(parsed)?.close() == true || run {
-            // 部分 provider 不支持 openInputStream, 退化为存在性检查
+        val stream = context.contentResolver.openInputStream(parsed)
+        if (stream != null) {
+            stream.close()
+            true
+        } else {
+            // 部分 provider 不支持 openInputStream, 退化为 MIME 类型检查
             context.contentResolver.getType(parsed) != null
         }
     }.getOrDefault(false)
