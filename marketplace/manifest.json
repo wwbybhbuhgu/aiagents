@@ -8,5 +8,87 @@
     {"id": "fun", "name": "Fun", "icon": "Gamepad"},
     {"id": "education", "name": "Education", "icon": "BookOpen"}
   ],
-  "entries": []
+  "entries": [
+    {
+      "id": "web-search",
+      "type": "skill",
+      "title": "Web Search",
+      "description": "Enhanced web search with multiple provider support (Bing, Brave, SearXNG, etc.)",
+      "detail": "Adds powerful web search capabilities to your AI assistant. Supports multiple search providers with fallback.",
+      "author": {"id": "1", "login": "wwbybhbuhgu"},
+      "categoryId": "utilities",
+      "version": "1.0.0",
+      "downloads": 128,
+      "likes": 24,
+      "featured": true,
+      "tags": ["search", "web", "internet"]
+    },
+    {
+      "id": "code-runner",
+      "type": "toolpkg",
+      "title": "Code Runner",
+      "description": "Run JavaScript, Python, and Shell code directly in chat",
+      "detail": "Execute code snippets in multiple languages. Supports sandboxed execution with workspace integration.",
+      "author": {"id": "1", "login": "wwbybhbuhgu"},
+      "categoryId": "coding",
+      "version": "1.2.0",
+      "downloads": 256,
+      "likes": 42,
+      "featured": true,
+      "tags": ["code", "execution", "sandbox"]
+    },
+    {
+      "id": "sticker-pack",
+      "type": "script",
+      "title": "Sticker Pack",
+      "description": "116 built-in stickers for meme battles and fun conversations",
+      "detail": "A collection of 116 stickers organized by category. Includes reaction memes, emotions, and fun expressions.",
+      "author": {"id": "1", "login": "wwbybhbuhgu"},
+      "categoryId": "fun",
+      "version": "1.0.0",
+      "downloads": 89,
+      "likes": 31,
+      "tags": ["sticker", "meme", "fun"]
+    },
+    {
+      "id": "document-reader",
+      "type": "skill",
+      "title": "Document Reader",
+      "description": "Read and analyze PDF, DOCX, PPTX, and EPUB files",
+      "detail": "Parse documents and extract text content for AI analysis. Supports multiple document formats.",
+      "author": {"id": "1", "login": "wwbybhbuhgu"},
+      "categoryId": "productivity",
+      "version": "1.1.0",
+      "downloads": 167,
+      "likes": 38,
+      "tags": ["document", "pdf", "reader"]
+    },
+    {
+      "id": "image-gen-tool",
+      "type": "toolpkg",
+      "title": "Image Generation",
+      "description": "Generate images using AI models (DALL-E, Stable Diffusion, etc.)",
+      "detail": "Create images from text prompts. Supports multiple image generation backends.",
+      "author": {"id": "1", "login": "wwbybhbuhgu"},
+      "categoryId": "creative",
+      "version": "1.0.0",
+      "downloads": 203,
+      "likes": 56,
+      "featured": true,
+      "tags": ["image", "generation", "ai", "art"]
+    },
+    {
+      "id": "voice-chat",
+      "type": "skill",
+      "title": "Voice Chat",
+      "description": "Speech-to-text and text-to-speech for hands-free conversations",
+      "detail": "Enable voice interaction with your AI assistant. Supports multiple ASR and TTS providers.",
+      "author": {"id": "1", "login": "wwbybhbuhgu"},
+      "categoryId": "utilities",
+      "version": "1.0.0",
+      "downloads": 145,
+      "likes": 29,
+      "tags": ["voice", "speech", "tts", "asr"]
+    }
+  ]
 }
