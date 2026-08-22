@@ -65,7 +65,6 @@ import me.rerere.hugeicons.stroke.LookTop
 import me.rerere.hugeicons.stroke.PencilEdit01
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Settings03
-import me.rerere.hugeicons.stroke.Sparkles
 import me.rerere.hugeicons.stroke.Store01
 import me.rerere.hugeicons.stroke.TransactionHistory
 import com.aiagents.R
@@ -158,9 +157,6 @@ fun ChatDrawerContent(
     var showCreateFolderDialog by remember { mutableStateOf(false) }
     var folderToRename by remember { mutableStateOf<Folder?>(null) }
     var folderToDelete by remember { mutableStateOf<Folder?>(null) }
-
-    // Menu popup 状态
-    var showMenuPopup by remember { mutableStateOf(false) }
 
     ModalDrawerSheet(
         modifier = Modifier.width(300.dp)
@@ -329,28 +325,12 @@ fun ChatDrawerContent(
                     },
                 )
 
-                Box {
-                    DrawerAction(
-                        icon = {
-                            Icon(HugeIcons.Sparkles, "Menu")
-                        },
-                        label = {
-                            Text(stringResource(R.string.menu))
-                        },
-                        onClick = {
-                            showMenuPopup = true
-                        },
-                    )
-                    DropdownMenu(
-                        expanded = showMenuPopup,
-                        onDismissRequest = { showMenuPopup = false }
-                    ) {
-                    }
-                }
-
                 DrawerAction(
                     icon = {
-                        Icon(HugeIcons.InLove, stringResource(R.string.favorite_page_title))
+                        Icon(
+                            imageVector = HugeIcons.InLove,
+                            contentDescription = stringResource(R.string.favorite_page_title)
+                        )
                     },
                     label = {
                         Text(stringResource(R.string.favorite_page_title))

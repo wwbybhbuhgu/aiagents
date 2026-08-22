@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "categories": [
+    {"id": "productivity", "name": "Productivity", "icon": "Tasks"},
+    {"id": "coding", "name": "Coding", "icon": "Code"},
+    {"id": "creative", "name": "Creative", "icon": "Palette"},
+    {"id": "utilities", "name": "Utilities", "icon": "Wrench"},
+    {"id": "fun", "name": "Fun", "icon": "Gamepad"},
+    {"id": "education", "name": "Education", "icon": "BookOpen"}
+  ],
+  "entries": []
+}

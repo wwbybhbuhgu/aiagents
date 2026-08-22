@@ -21,13 +21,13 @@ class MarketRepository {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     var storeOwner: String = "wwbybhbuhgu"
-    var storeRepo: String = "aiagents-market"
+    var storeRepo: String = "aiagents"
 
     /** Proxy address (host:port), null = direct */
     var proxyAddress: String? = null
 
     private val baseUrl: String
-        get() = "https://raw.githubusercontent.com/$storeOwner/$storeRepo/main"
+        get() = "https://raw.githubusercontent.com/$storeOwner/$storeRepo/master/marketplace"
 
     private fun openConnection(url: URL): HttpURLConnection {
         val conn = if (proxyAddress != null) {
