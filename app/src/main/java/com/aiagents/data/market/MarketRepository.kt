@@ -1,10 +1,11 @@
 package com.aiagents.data.market
 
-import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.net.URL
 
 /**
@@ -14,32 +15,37 @@ import java.net.URL
  * - manifest.json in repo root lists all entries
  * - Individual entry details fetched from entries/{id}.json
  * - Binary assets (scripts, toolpkg) downloaded from GitHub releases
- *
- * Store repo will be configured via Settings.
  */
-class MarketRepository(private val context: Context? = null) {
+class MarketRepository {
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
-    // Default store repo - can be overridden in settings
     var storeOwner: String = "wwbybhbuhgu"
     var storeRepo: String = "aiagents-market"
+
+    /** Proxy address (host:port), null = direct */
+    var proxyAddress: String? = null
 
     private val baseUrl: String
         get() = "https://raw.githubusercontent.com/$storeOwner/$storeRepo/main"
 
-    private val apiBaseUrl: String
-        get() = "https://api.github.com/repos/$storeOwner/$storeRepo"
+    private fun openConnection(url: URL): HttpURLConnection {
+        val conn = if (proxyAddress != null) {
+            val parts = proxyAddress!!.split(":")
+            val host = parts[0]
+            val port = parts.getOrNull(1)?.toIntOrNull() ?: 7890
+            url.openConnection(Proxy(Proxy.Type.HTTP, InetSocketAddress(host, port)))
+        } else {
+            url.openConnection()
+        } as HttpURLConnection
+        conn.connectTimeout = 15000
+        conn.readTimeout = 15000
+        return conn
+    }
 
-    /**
-     * Fetch the marketplace manifest (list of all entries).
-     */
     suspend fun fetchManifest(): Result<MarketManifest> = withContext(Dispatchers.IO) {
         try {
-            val url = URL("$baseUrl/manifest.json")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.connectTimeout = 15000
-            conn.readTimeout = 15000
+            val conn = openConnection(URL("$baseUrl/manifest.json"))
             conn.setRequestProperty("Accept", "application/json")
 
             if (conn.responseCode != 200) {
@@ -54,15 +60,9 @@ class MarketRepository(private val context: Context? = null) {
         }
     }
 
-    /**
-     * Fetch details for a specific entry.
-     */
     suspend fun fetchEntry(entryId: String): Result<MarketEntry> = withContext(Dispatchers.IO) {
         try {
-            val url = URL("$baseUrl/entries/$entryId.json")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.connectTimeout = 15000
-            conn.readTimeout = 15000
+            val conn = openConnection(URL("$baseUrl/entries/$entryId.json"))
 
             if (conn.responseCode != 200) {
                 return@withContext Result.failure(Exception("HTTP ${conn.responseCode}"))
@@ -76,19 +76,13 @@ class MarketRepository(private val context: Context? = null) {
         }
     }
 
-    /**
-     * Download a file from a URL to the workspace.
-     */
     suspend fun downloadAsset(
         downloadUrl: String,
         fileName: String,
         targetDir: java.io.File,
     ): Result<java.io.File> = withContext(Dispatchers.IO) {
         try {
-            val url = URL(downloadUrl)
-            val conn = url.openConnection() as HttpURLConnection
-            conn.connectTimeout = 30000
-            conn.readTimeout = 60000
+            val conn = openConnection(URL(downloadUrl))
             conn.setRequestProperty("User-Agent", "AiAgents/1.0")
 
             if (conn.responseCode != 200) {
@@ -110,9 +104,6 @@ class MarketRepository(private val context: Context? = null) {
         }
     }
 
-    /**
-     * Search entries by query string.
-     */
     fun searchEntries(entries: List<MarketEntry>, query: String): List<MarketEntry> {
         if (query.isBlank()) return entries
         val q = query.lowercase()
@@ -124,25 +115,16 @@ class MarketRepository(private val context: Context? = null) {
         }
     }
 
-    /**
-     * Filter entries by type.
-     */
     fun filterByType(entries: List<MarketEntry>, type: MarketType?): List<MarketEntry> {
         if (type == null) return entries
         return entries.filter { it.type == type.wireValue }
     }
 
-    /**
-     * Filter entries by category.
-     */
     fun filterByCategory(entries: List<MarketEntry>, categoryId: String?): List<MarketEntry> {
         if (categoryId == null) return entries
         return entries.filter { it.categoryId == categoryId }
     }
 
-    /**
-     * Sort entries.
-     */
     fun sortEntries(entries: List<MarketEntry>, sort: MarketSort): List<MarketEntry> {
         return when (sort) {
             MarketSort.UPDATED -> entries.sortedByDescending { it.updatedAt ?: "" }

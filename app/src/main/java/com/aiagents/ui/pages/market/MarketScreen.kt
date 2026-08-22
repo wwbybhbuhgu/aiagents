@@ -43,6 +43,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.aiagents.data.market.MarketEntry
 import com.aiagents.data.market.MarketRepository
+import com.aiagents.data.proxy.ProxyManager
+import org.koin.compose.koinInject
 import com.aiagents.data.market.MarketSort
 import com.aiagents.data.market.MarketType
 import kotlinx.coroutines.launch
@@ -53,7 +55,12 @@ fun MarketScreen(
     onEntryClick: (String) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
-    val repository = remember { MarketRepository(null) }
+    val proxyManager = koinInject<ProxyManager>()
+    val repository = remember {
+        MarketRepository().apply {
+            proxyAddress = proxyManager.localProxyAddress
+        }
+    }
     
     var entries by remember { mutableStateOf(emptyList<MarketEntry>()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -187,10 +194,16 @@ fun MarketScreen(
                         verticalArrangement = Arrangement.Center,
                     ) {
                         Text(
-                            text = error ?: "Unknown error",
-                            color = MaterialTheme.colorScheme.error,
+                            text = "Unable to load extensions",
+                            style = MaterialTheme.typography.titleMedium,
                         )
                         Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = error ?: "Unknown error",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(16.dp))
                         Text(
                             text = "Tap to retry",
                             modifier = Modifier.clickable { loadEntries() },
