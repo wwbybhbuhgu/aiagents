@@ -128,6 +128,7 @@ import com.aiagents.ui.pages.setting.SettingSpeechPage
 import com.aiagents.ui.pages.setting.SettingWebPage
 import com.aiagents.ui.pages.setting.SettingProxyPage
 import com.aiagents.ui.pages.share.handler.ShareHandlerPage
+import com.aiagents.ui.pages.market.MarketScreen
 import com.aiagents.ui.pages.stats.StatsPage
 import com.aiagents.ui.pages.webview.WebViewPage
 import com.aiagents.ui.theme.LocalDarkMode
@@ -706,6 +707,10 @@ class RouteActivity : ComponentActivity() {
                             entry<Screen.Stats> {
                                 StatsPage()
                             }
+
+                            entry<Screen.Market> {
+                                MarketScreen()
+                            }
                         }
                     )
                     // 初次启动向导: 没有任何就绪工作区时全屏引导下载
@@ -923,4 +928,7 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object Stats : Screen
+
+    @Serializable
+    data object Market : Screen
 }

@@ -66,6 +66,7 @@ import me.rerere.hugeicons.stroke.PencilEdit01
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Sparkles
+import me.rerere.hugeicons.stroke.Store01
 import me.rerere.hugeicons.stroke.TransactionHistory
 import com.aiagents.R
 import com.aiagents.Screen
@@ -368,6 +369,18 @@ fun ChatDrawerContent(
                     },
                     onClick = {
                         navController.navigate(Screen.Stats)
+                    },
+                )
+
+                DrawerAction(
+                    icon = {
+                        Icon(HugeIcons.Store01, "应用商店")
+                    },
+                    label = {
+                        Text("应用商店")
+                    },
+                    onClick = {
+                        navController.navigate(Screen.Market)
                     },
                 )
 
