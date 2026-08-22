@@ -36,6 +36,7 @@ import com.aiagents.data.datastore.migration.PreferenceStoreV2Migration
 import com.aiagents.data.datastore.migration.PreferenceStoreV3Migration
 import com.aiagents.data.model.Assistant
 import com.aiagents.data.model.Avatar
+import com.aiagents.data.model.CharacterGroup
 import com.aiagents.data.model.InjectionPosition
 import com.aiagents.data.model.Lorebook
 import com.aiagents.data.model.PromptInjection
@@ -103,6 +104,7 @@ class SettingsStore(
         val SELECT_ASSISTANT = stringPreferencesKey("select_assistant")
         val ASSISTANTS = stringPreferencesKey("assistants")
         val ASSISTANT_TAGS = stringPreferencesKey("assistant_tags")
+        val CHARACTER_GROUPS = stringPreferencesKey("character_groups")
 
         // 搜索
         val SEARCH_SERVICES = stringPreferencesKey("search_services")
@@ -184,6 +186,9 @@ class SettingsStore(
                 assistantId = preferences[SELECT_ASSISTANT]?.let { Uuid.parse(it) }
                     ?: DEFAULT_ASSISTANT_ID,
                 assistantTags = preferences[ASSISTANT_TAGS]?.let {
+                    JsonInstant.decodeFromString(it)
+                } ?: emptyList(),
+                characterGroups = preferences[CHARACTER_GROUPS]?.let {
                     JsonInstant.decodeFromString(it)
                 } ?: emptyList(),
                 providers = JsonInstant.decodeFromString(preferences[PROVIDERS] ?: "[]"),
@@ -395,6 +400,7 @@ class SettingsStore(
             preferences[ASSISTANTS] = JsonInstant.encodeToString(settings.assistants)
             preferences[SELECT_ASSISTANT] = settings.assistantId.toString()
             preferences[ASSISTANT_TAGS] = JsonInstant.encodeToString(settings.assistantTags)
+            preferences[CHARACTER_GROUPS] = JsonInstant.encodeToString(settings.characterGroups)
 
             preferences[SEARCH_SERVICES] = JsonInstant.encodeToString(settings.searchServices)
             preferences[SEARCH_COMMON] = JsonInstant.encodeToString(settings.searchCommonOptions)
@@ -543,6 +549,7 @@ data class Settings(
     val providers: List<ProviderSetting> = DEFAULT_PROVIDERS,
     val assistants: List<Assistant> = DEFAULT_ASSISTANTS,
     val assistantTags: List<Tag> = emptyList(),
+    val characterGroups: List<CharacterGroup> = emptyList(),
     val searchServices: List<SearchServiceOptions> = listOf(SearchServiceOptions.DEFAULT),
     val searchCommonOptions: SearchCommonOptions = SearchCommonOptions(),
     val searchServiceSelected: Int = 0,

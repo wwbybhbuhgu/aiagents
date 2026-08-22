@@ -384,6 +384,18 @@ fun ChatDrawerContent(
                     },
                 )
 
+                DrawerAction(
+                    icon = {
+                        Icon(HugeIcons.InLove, "角色群组")
+                    },
+                    label = {
+                        Text("角色群组")
+                    },
+                    onClick = {
+                        navController.navigate(Screen.CharacterGroups)
+                    },
+                )
+
                 Spacer(Modifier.weight(1f))
 
                 DrawerAction(

@@ -616,7 +616,24 @@ class ChatService(
                     }
                 },
                 assistant = assistant,
-                conversationSystemPrompt = conversation.customSystemPrompt,
+                conversationSystemPrompt = buildString {
+                    // 群聊模式: 注入群聊编排提示词
+                    conversation.characterGroupId?.let { groupId ->
+                        val group = settings.characterGroups.find { it.id == groupId }
+                        if (group != null) {
+                            val members = group.memberIds.mapNotNull { id ->
+                                settings.assistants.find { it.id == id }
+                            }
+                            val groupPrompt = com.aiagents.data.model.buildGroupChatPrompt(members)
+                            if (groupPrompt.isNotBlank()) {
+                                appendLine(groupPrompt)
+                                appendLine()
+                            }
+                        }
+                    }
+                    // 对话级自定义 system prompt
+                    conversation.customSystemPrompt?.let { append(it) }
+                }.ifBlank { null },
                 conversationModeInjectionIds = conversation.modeInjectionIds,
                 conversationLorebookIds = conversation.lorebookIds,
                 workspaceCwd = conversation.workspaceCwd,

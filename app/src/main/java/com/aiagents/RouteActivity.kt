@@ -129,6 +129,8 @@ import com.aiagents.ui.pages.setting.SettingWebPage
 import com.aiagents.ui.pages.setting.SettingProxyPage
 import com.aiagents.ui.pages.share.handler.ShareHandlerPage
 import com.aiagents.ui.pages.market.MarketScreen
+import com.aiagents.ui.pages.character.CharacterGroupPage
+import com.aiagents.ui.pages.character.CharacterGroupEditPage
 import com.aiagents.ui.pages.stats.StatsPage
 import com.aiagents.ui.pages.webview.WebViewPage
 import com.aiagents.ui.theme.LocalDarkMode
@@ -711,6 +713,14 @@ class RouteActivity : ComponentActivity() {
                             entry<Screen.Market> {
                                 MarketScreen()
                             }
+
+                            entry<Screen.CharacterGroups> {
+                                CharacterGroupPage()
+                            }
+
+                            entry<Screen.CharacterGroupEdit> { route ->
+                                CharacterGroupEditPage(groupId = route.groupId)
+                            }
                         }
                     )
                     // 初次启动向导: 没有任何就绪工作区时全屏引导下载
@@ -931,4 +941,10 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object Market : Screen
+
+    @Serializable
+    data object CharacterGroups : Screen
+
+    @Serializable
+    data class CharacterGroupEdit(val groupId: String?) : Screen
 }
