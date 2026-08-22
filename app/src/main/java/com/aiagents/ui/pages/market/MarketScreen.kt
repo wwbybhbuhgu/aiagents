@@ -58,7 +58,7 @@ fun MarketScreen(
     val proxyManager = koinInject<ProxyManager>()
     val repository = remember {
         MarketRepository().apply {
-            proxyAddress = proxyManager.localProxyAddress
+            proxyProvider = { proxyManager.localProxyAddress }
         }
     }
     

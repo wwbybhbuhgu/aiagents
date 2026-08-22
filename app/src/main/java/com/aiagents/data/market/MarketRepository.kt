@@ -23,15 +23,16 @@ class MarketRepository {
     var storeOwner: String = "wwbybhbuhgu"
     var storeRepo: String = "aiagents"
 
-    /** Proxy address (host:port), null = direct */
-    var proxyAddress: String? = null
+    /** Proxy address (host:port), null = direct. Refreshed per-request. */
+    var proxyProvider: () -> String? = { null }
 
     private val baseUrl: String
         get() = "https://raw.githubusercontent.com/$storeOwner/$storeRepo/master/marketplace"
 
     private fun openConnection(url: URL): HttpURLConnection {
-        val conn = if (proxyAddress != null) {
-            val parts = proxyAddress!!.split(":")
+        val addr = proxyProvider()
+        val conn = if (addr != null) {
+            val parts = addr.split(":")
             val host = parts[0]
             val port = parts.getOrNull(1)?.toIntOrNull() ?: 7890
             url.openConnection(Proxy(Proxy.Type.HTTP, InetSocketAddress(host, port)))
